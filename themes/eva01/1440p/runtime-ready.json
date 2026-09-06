@@ -1,0 +1,34 @@
+{
+  "theme": "eva01",
+  "profile": "1440p",
+  "canvas": [
+    2560,
+    1440
+  ],
+  "ready": true,
+  "readiness": "assets-built; see docs/runtime-evidence.md for actual VM checks",
+  "fonts": {
+    "menu": "Evangelion eva01-1440p-menu Regular 35",
+    "timer": "Evangelion eva01-1440p-timer Regular 32"
+  },
+  "sha256": {
+    "README.md": "6735a0c555f512250546e898c056312e95ceb6ea4730da1bcfc878af15ebca35",
+    "background.png": "89807f2a08caac1c42072e8f9b3c97aa1fbdc3c934fc9d7d0fc160369fcde828",
+    "fonts/eva01-1440p-menu.pf2": "a0c72fe3678741825c98d9be212865cf5a5cbf19043f4dbe7af650fc769d9ec2",
+    "fonts/eva01-1440p-timer.pf2": "b294dcdd8257f06025d8e066f55ec43e9b8e644273425b6b440060d2c1d46e5e",
+    "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
+    "progress/elapsed_c.png": "9168742d246f31de549294470441d44c4520569c5fe4ed5f81cabb67e1c6e95d",
+    "progress/frame_c.png": "0d124c7e81307b93fde305c603185dee7fac4206d3d7610350ed474040db1858",
+    "progress/timer-mask.png": "e1bddba1196bb4ed1cedee9300ffd0b24493036bc990d33321db2a05e90c43a6",
+    "selectors/item_c.png": "510a1a2505daf87f0e3eca7daa32503c53d523e5ab1ced011bd0883f3a605d32",
+    "selectors/item_e.png": "203cc6d47cbe3f7cc89a9911ccd5284e6f25736ff78ba1250c4b83f06030702b",
+    "selectors/item_w.png": "c09c5edb8b236ed58be276a1fc923345c7f7c56be9f0f1f4a66ec4b8b46abd17",
+    "selectors/menu_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
+    "selectors/scrollbar_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
+    "selectors/selected_c.png": "d3ac4e97a312d3d8e3a30967425b8f9a129fee7f707d0dfc919a027ec1f05111",
+    "selectors/selected_e.png": "9ec480995023eccdb6e1d63e4a4363ad3f772b01ac5f7bded13e92b073581a57",
+    "selectors/selected_w.png": "8df90d7ddfb1c37c05c4678220620734a2d1b65e836fac9dd3b1789d2b7683bf",
+    "selectors/thumb_c.png": "f5e345348e2511ee5dd852999d6efe808a944450a587843267f969e0422a3e63",
+    "theme.txt": "18de473a54558650f429908726150e95dabdbcd006e140fe1e05aee8d755a44f"
+  }
+}

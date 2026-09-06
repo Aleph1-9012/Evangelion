@@ -1,0 +1,34 @@
+{
+  "theme": "wunder",
+  "profile": "1080p",
+  "canvas": [
+    1920,
+    1080
+  ],
+  "ready": true,
+  "readiness": "assets-built; see docs/runtime-evidence.md for actual VM checks",
+  "fonts": {
+    "menu": "Evangelion wunder-1080p-menu Regular 35",
+    "timer": "Evangelion wunder-1080p-timer Regular 24"
+  },
+  "sha256": {
+    "README.md": "05315c69bcd518784e41bbcddfce07e13b40e4e96d42b7873b3e48b7136a2b05",
+    "background.png": "5ac33ffef9f873cf3be38c013d70e22c97302261f91669970439d9ba078c7a34",
+    "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
+    "fonts/wunder-1080p-menu.pf2": "d30f47a06a8e104a9109955c0234c4271a5d4b90e2c057628469946f651d574b",
+    "fonts/wunder-1080p-timer.pf2": "35218723226d5087bf7443111d00f27009fb31b1cd28fadd9441318b18071209",
+    "progress/elapsed_c.png": "db8ee23711ba17b4a6eab055a3aff736f3506e94e9d4d926941104fab48d94ad",
+    "progress/frame_c.png": "32450c935c7e56cb3f2bfe3116f444759c75695ba7a76f20f0e97db842ab52a1",
+    "progress/timer-mask.png": "948b2542e4982905310f1197097a37fc30d878a93fe8fc9628fb4990c1deba95",
+    "selectors/item_c.png": "7baaf6e9b41afe196fdaecbf2216e000d29ceec17a3d91363419d3a42770c267",
+    "selectors/item_e.png": "9a97c47e7761e338f8be8f94e585baeaab10684ba5c2e1ceed145b1eec24e03f",
+    "selectors/item_w.png": "f7fe9d8f31a377d55dc44a35c2fa4f2de0a73813a6b369fada09fd82118dcb9b",
+    "selectors/menu_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
+    "selectors/scrollbar_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
+    "selectors/selected_c.png": "45b692a7ee98515804e659480cdaba9f824650ac308ed38e38d4ce75e27702a2",
+    "selectors/selected_e.png": "ad146a1b0a0027bae2ddffb6ba535602557cba6c95ca9f64d83eb7ca97ee75a7",
+    "selectors/selected_w.png": "458090c359fa8239a9624a748fd030e258c7abfb388079357580d2c7d5dab603",
+    "selectors/thumb_c.png": "c592ab56bedeecee8887f79373db2af0b72a94f5275bcb36ebd803df9b903607",
+    "theme.txt": "419573f7b4061f006fe276845a9ce270292af5b2e834dbdf88d55cffd5a588c1"
+  }
+}

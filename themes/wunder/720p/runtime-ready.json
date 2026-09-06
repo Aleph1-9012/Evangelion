@@ -1,0 +1,36 @@
+{
+  "theme": "wunder",
+  "profile": "720p",
+  "canvas": [
+    1280,
+    720
+  ],
+  "ready": true,
+  "readiness": "assets-built; see docs/runtime-evidence.md for actual VM checks",
+  "fonts": {
+    "menu": "Evangelion wunder-720p-menu Regular 23",
+    "timer": "Evangelion wunder-720p-timer Regular 16"
+  },
+  "sha256": {
+    "README.md": "cfb9d37cf519d4af8ef0137253de4a0cc8d93eed359757438489576e1e4096e2",
+    "background.png": "73ecf11a9651920806d7e74ee602695d18484e9a1c0ee53533c87385e89bcda6",
+    "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
+    "fonts/wunder-720p-menu.pf2": "6cb9be3db34f92cb7dbf6bd4fd790a02d88698e52bbe08898bbaf1a200cdb7f1",
+    "fonts/wunder-720p-timer.pf2": "0fd2a53153aa82fe5f68e044e14c674863b102c8d816008110e14e25aae7f622",
+    "progress/elapsed_c.png": "795398f6510800c8bc76bbb49712284e45e70f72ea67942ad84211ecba265b7f",
+    "progress/frame_c.png": "2d414f19f9a513a5cbabddd1fe63e943bd77ab3a85db879ce244e2d5fcb72ccd",
+    "progress/frame_e.png": "e1a95611106762f40e6892ac6f097c4a10f5357f31c1d32d75fd885ea1ba7fe0",
+    "progress/frame_w.png": "e1a95611106762f40e6892ac6f097c4a10f5357f31c1d32d75fd885ea1ba7fe0",
+    "progress/timer-mask.png": "867d94a6e211d72231efa21ffde56a9c1c00e924a7bb2cd07caaf57489274286",
+    "selectors/item_c.png": "722031538aeb8d603bf0a89f0d220d1b2900441b60efe01e1a9d86926776f0bf",
+    "selectors/item_e.png": "867dd1655b3e04410937ddf93bae4ecf01e346564f81b4de48e6c2b41b8a5535",
+    "selectors/item_w.png": "dad0dbd3aecd418a93d64b1da22fa0f08d020f9c2a4fb1f2646526a3e283979c",
+    "selectors/menu_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
+    "selectors/scrollbar_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
+    "selectors/selected_c.png": "5334081fd192b657553cb3523a68097313758973c4c4cd44bc244c3636e84324",
+    "selectors/selected_e.png": "2a651bd8655e8777d7da6bde9fc3a322c07ba8ced95f758e39228f9e16514ed6",
+    "selectors/selected_w.png": "57f76446854865ea95ef7c9ee2eba3fda6af48a563c55730a9ddb3319d0484f1",
+    "selectors/thumb_c.png": "c592ab56bedeecee8887f79373db2af0b72a94f5275bcb36ebd803df9b903607",
+    "theme.txt": "3b78915666ec97c9edd770d7ee84354a09431b08f45ca4d2165adcd52a46db40"
+  }
+}

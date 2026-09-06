@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ -f "$SCRIPT_DIR/manage.py" ]; then
+    exec python3 -B "$SCRIPT_DIR/manage.py" "$@"
+fi
+exec python3 -B "$SCRIPT_DIR/../share/evangelion/bin/manage.py" "$@"
