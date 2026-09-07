@@ -1,0 +1,36 @@
+{
+  "theme": "eva02",
+  "profile": "720p",
+  "canvas": [
+    1280,
+    720
+  ],
+  "ready": true,
+  "readiness": "assets-built; see .dev/docs/runtime-evidence.md in the development checkout for actual VM checks",
+  "fonts": {
+    "menu": "Evangelion eva02-720p-menu Regular 28",
+    "timer": "Evangelion eva02-720p-timer Regular 9",
+    "selected": "Evangelion eva02-720p-selected Regular 31"
+  },
+  "sha256": {
+    "README.md": "d2fba2ead4e3b0d1d60ab7f203fedcc7317e3c51c25ecc94b2752fbe74b539e1",
+    "background.png": "e951ffa5b968df4ee29237ce5131d11ea2dbf8ef4620ead09e137958055a5344",
+    "fonts/eva02-720p-menu.pf2": "05f3e5f55896921a59304e1190bdc8acf9603248b9c9575a180511941a6cc123",
+    "fonts/eva02-720p-selected.pf2": "8d468093adb9bfd4a145a77c4fd1d9d72316af75bf2029e832b8de774e96954f",
+    "fonts/eva02-720p-timer.pf2": "55ca152708d358fbb239b3081c2d33a1948358a56b8ae7be9151846074ad3251",
+    "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
+    "progress/elapsed_c.png": "e5d8297bda2ccb9dcbd3e4237a4499943016d89e81f477a5ef38ca9345f7c849",
+    "progress/frame_c.png": "57b9a2f06185076d320cbd64972eef9618addac4598b9fb8a42eff4bc029045b",
+    "progress/timer-mask.png": "a54797bb566b2433d32a321c8cae3d209c193ac58bfb3049a3b1684453d8a72e",
+    "selectors/item_c.png": "61fdf5e8f5ca2f0573856a34d6aa8fecd2d05ac62054b4b26cd488cd61f015cd",
+    "selectors/item_e.png": "7c0a1afb392656eb9a15fc949bc9a290d69cdfbd49a731b06ac1e50cb1ae2d8a",
+    "selectors/item_w.png": "b31ec9721e6d253a8d47aeb840bb48c0a1f744370c7b051bc9ec4fc66ebf8f84",
+    "selectors/menu_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
+    "selectors/scrollbar_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
+    "selectors/selected_c.png": "0873cb2ec6447a6ec31464bbc76ecf9d07d2276a884bee10ac651667109d9284",
+    "selectors/selected_e.png": "7489a331e21d973d9157a0cc2f4fba04e5f4853ef8aee5f01010144811fc5732",
+    "selectors/selected_w.png": "209649274a31d2b2dd10f5099f997c8779dca2448db639c23164c0c3cf1ea79a",
+    "selectors/thumb_c.png": "9f33c4843bf24f6a377144dbec531874ea57e7ab510d738e88989a24030cbbd5",
+    "theme.txt": "21c746d00eb257e04dc91133cedf44606cc70a3bbc72397746c4fec33fd573e6"
+  }
+}

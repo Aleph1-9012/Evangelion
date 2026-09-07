@@ -19,6 +19,7 @@ Users can then switch from any directory:
 ```sh
 sudo eva
 sudo eva set wunder 1080p
+sudo eva set eva02 1080p
 sudo eva set eva01 1440p --gfxmode 2560x1600
 eva list
 sudo eva status
@@ -35,7 +36,9 @@ Initial direct selection accepts `sudo ./install.sh eva01 1440p`, or the origina
 sudo eva set wunder 1440p --dry-run
 ```
 
-Only generated EVA-01 and Wunder profiles with a matching `runtime-ready.json` record, PNG artwork, `theme.txt` and `fonts/*.pf2` can be installed. The installer checks the recorded canvas dimensions and every asset's SHA256, requires every referenced image and styled-box center slice, and matches theme font names against the names embedded in the packaged PF2 files. Changed, missing or unrecorded assets require a rebuild.
+Only generated EVA-01, Wunder and EVA-02 profiles with a matching `runtime-ready.json` record, PNG artwork, `theme.txt` and `fonts/*.pf2` can be installed. The installer checks the recorded canvas dimensions and every asset's SHA256, requires every referenced image and styled-box center slice, and matches theme font names against the names embedded in the packaged PF2 files. Changed, missing or unrecorded assets require a rebuild.
+
+If an older installation does not list EVA-02, rerun `sudo ./install.sh` from the updated checkout to refresh the installed catalog.
 
 The three design sizes are `720p`, `1080p` and `1440p`. Graphics mode and design size are separate. A larger mode keeps the design at its native dimensions, centered with padding. For example, `1440p --gfxmode 3840x2160` uses the 2560×1440 design on a 3840×2160 framebuffer. There is no separately scaled 4K design. The installer rejects a mode smaller than the selected design.
 
@@ -131,6 +134,8 @@ If someone edits the managed defaults block or generated loader, the operation s
 
 ## Hardware observations
 
-Both themes have booted successfully on Arch Linux and passed menu, countdown, submenu and display checks in disposable UEFI virtual machines at 720p, 1080p, 1440p and larger padded modes. Physical firmware support for every mode and Secure Boot compatibility remain untested.
+EVA-01, Wunder and EVA-02 have booted successfully on an Arch Linux machine. All three themes have also passed checks in disposable UEFI virtual machines at 720p, 1080p, 1440p and larger padded modes. Physical firmware support for every mode and Secure Boot compatibility remain untested.
+
+EVA-02 shows five rows. Its fixed 01–05 labels mark the visible slots while longer menus scroll. Entry titles come from GRUB. Six Caps provides the condensed entry lettering; symbols and languages outside the font's coverage depend on GRUB's fallback fonts. The countdown uses Intel One Mono and a continuous bar. The reference image's small arrow at the fill endpoint is omitted from the live countdown.
 
 An empty terminal box over the theme and a pause of about 10 seconds after selecting an entry have been reported. VM comparisons with Sidonia did not establish a theme-specific cause. The delay remains unresolved; no boot-image or performance changes are included.
