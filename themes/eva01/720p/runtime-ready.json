@@ -6,7 +6,7 @@
     720
   ],
   "ready": true,
-  "readiness": "assets-built; see docs/runtime-evidence.md for actual VM checks",
+  "readiness": "assets-built",
   "fonts": {
     "menu": "Evangelion eva01-720p-menu Regular 17",
     "timer": "Evangelion eva01-720p-timer Regular 16"
@@ -29,6 +29,6 @@
     "selectors/selected_e.png": "9f94c57a75931a44d00fba3868594869d102a434f88c9cc3361f302e9e81c8ec",
     "selectors/selected_w.png": "f0f4420a566f096ddc44c99e58a322af9781a5afc38f0172c036865a258bffc0",
     "selectors/thumb_c.png": "f5e345348e2511ee5dd852999d6efe808a944450a587843267f969e0422a3e63",
-    "theme.txt": "5a1347483f7e7a0fc7dd4ddb5b4f027fbc2e31a7d547bbe596a50364587310ff"
+    "theme.txt": "a56fbfd243813f20550991bf872e1a75897a6c0bf140e48426437cbccf76bccc"
   }
 }

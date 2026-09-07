@@ -12,7 +12,7 @@ The paths below show `/boot/grub`; on systems using `/boot/grub2`, the configura
 
 ## Select a theme and graphics mode
 
-The release archive includes built runtime files. Install once from the archive or checkout:
+The repository includes ready-to-use theme files. Install once from the downloaded folder:
 
 ```sh
 sudo ./install.sh
@@ -45,9 +45,7 @@ sudo eva set wunder 1440p --dry-run
 
 Only generated EVA-01, Wunder, EVA-02 and Ramiel profiles with a matching `runtime-ready.json` record, PNG artwork, `theme.txt` and `fonts/*.pf2` can be installed. The installer checks the recorded canvas dimensions and every asset's SHA256, requires every referenced image and styled-box center slice, and matches theme font names against the names embedded in the packaged PF2 files. Changed, missing or unrecorded assets require a rebuild.
 
-The installer and chooser use Bash with `jq` to read the asset and ownership records. They do not require Python. Existing v1.0.0 installations can upgrade by rerunning `sudo ./install.sh` from this checkout. The update replaces the old manager while preserving the current choice, rollback snapshot and original GRUB settings.
-
-If an older installation does not list a new theme, rerun `sudo ./install.sh` from the updated checkout to refresh the installed catalog.
+The installer and chooser use Bash with `jq` to read the asset and ownership records. To refresh the installed command and theme catalog, run `sudo ./install.sh --no-apply` from the updated folder. This preserves the current choice, rollback snapshot and original GRUB settings.
 
 The three design sizes are `720p`, `1080p` and `1440p`. Graphics mode and design size are separate. A larger mode keeps the design at its native dimensions, centered with padding. For example, `1440p --gfxmode 3840x2160` uses the 2560×1440 design on a 3840×2160 framebuffer. There is no separately scaled 4K design. The installer rejects a mode smaller than the selected design.
 

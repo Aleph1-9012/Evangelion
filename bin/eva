@@ -4,12 +4,15 @@
 
 set -Eeuo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-if [[ -f $SCRIPT_DIR/install.sh ]]; then
+if [[ -f $SCRIPT_DIR/../share/evangelion/bin/install.sh ]]; then
+    # shellcheck source=bin/install.sh
+    source "$SCRIPT_DIR/../share/evangelion/bin/install.sh"
+elif [[ -d $SCRIPT_DIR/../themes && -f $SCRIPT_DIR/install.sh ]]; then
     # shellcheck source=bin/install.sh
     source "$SCRIPT_DIR/install.sh"
 else
-    # shellcheck source=bin/install.sh
-    source "$SCRIPT_DIR/../share/evangelion/bin/install.sh"
+    printf 'eva: Installation files are missing. Rerun install.sh from the downloaded Evangelion folder.\n' >&2
+    exit 1
 fi
 
 theme_name() {

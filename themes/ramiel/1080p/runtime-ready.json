@@ -6,7 +6,7 @@
     1080
   ],
   "ready": true,
-  "readiness": "assets-built; see .dev/docs/runtime-evidence.md in the development checkout for actual VM checks",
+  "readiness": "assets-built",
   "fonts": {
     "menu": "Evangelion ramiel-1080p-menu Regular 25",
     "timer": "Evangelion ramiel-1080p-timer Regular 17",
@@ -31,6 +31,6 @@
     "selectors/selected_e.png": "40fbaa792113f42473de653249e4d512992a6f91ef3533e45c42e42e9f55bd5f",
     "selectors/selected_w.png": "6a5b6eed835f4515e5bf2bef5485399d7e3d6481f97873ac5378a8c14c0b970d",
     "selectors/thumb_c.png": "edce6e3ea5a984b18b7f6e4bb63fa726195273e5a8cce45360bcd249d3f33df3",
-    "theme.txt": "c4d2ece32af1c521ede8e0786f67aca5a63d9a3f8b6e3aee20f183ad11dc8711"
+    "theme.txt": "0dde47db679380b0d415fe6c49bc2533f174929b9b0cb160a2d58f8ed22786f4"
   }
 }

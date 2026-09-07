@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 Aleph1-9012
-# Shared installation functions for eva. State stays compatible with v1.0.0.
+# Shared installation functions for eva; supports existing installation records.
 
 set -Eeuo pipefail
 export LC_ALL=C
@@ -21,6 +21,7 @@ COMMAND=usr/local/bin/eva
 MANAGER=var/lib/evangelion-grub/manager.json
 PREVIOUS=var/lib/evangelion-grub/previous
 BEGIN='# BEGIN EVANGELION GRUB (managed; use install.sh --uninstall)'
+# Recognize blocks written before install and uninstall shared one entry point.
 LEGACY_BEGIN='# BEGIN EVANGELION GRUB (managed; use uninstall.sh)'
 END='# END EVANGELION GRUB'
 THEMES=(eva01 wunder eva02 ramiel)
@@ -38,7 +39,7 @@ need() { command -v "$1" >/dev/null || die "$1 is required."; }
 sha() { local result; result=$(sha256sum -- "$1") || die "Cannot hash $1"; printf '%s' "${result%% *}"; }
 
 safe_path() {
-    local base=$1 relative=$2 part cursor=$1
+    local relative=$2 part cursor=$1
     [[ $relative =~ ^[A-Za-z0-9_./-]+$ && $relative != /* ]] || die "Unsafe relative path: $relative"
     local -a parts
     IFS=/ read -r -a parts <<< "$relative"
@@ -79,13 +80,13 @@ mode_for() {
 }
 
 validate_hashes() {
-    local data=$1 prefix=$2 path value
+    local data=$1 prefix=$2 path
     jq -e 'type == "object" and all(to_entries[]; (.value|type == "string") and (.value|test("^[a-f0-9]{64}$")))' <<< "$data" >/dev/null || die 'Unsafe ownership manifest'
-    while IFS=$'\t' read -r path value; do
+    while IFS= read -r path; do
         [[ -n $path ]] || continue
         safe_path "$ROOT" "$path" >/dev/null
         [[ $path == "$prefix/"* || ( $prefix == "$LIBRARY" && $path == "$COMMAND" ) ]] || die "Unsafe ownership path: $path"
-    done < <(jq -r 'to_entries[] | [.key,.value] | @tsv' <<< "$data")
+    done < <(jq -r 'keys[] | [.] | @tsv' <<< "$data")
 }
 
 validate_choice() {
@@ -189,7 +190,7 @@ validate_references() {
     done < "${resources[$RUNTIME/theme.txt]}"
 }
 
-# Hash maps use JSON to retain the existing release's state format. jq parses
+# Hash maps use JSON to retain the existing installation state format. jq parses
 # records as data; neither the records nor GRUB defaults are executed as Shell.
 hash_map() {
     local -n entries=$1
@@ -268,7 +269,7 @@ plan_manager() {
     local -A manager_files=()
     load_manager
     if ((!removing)); then
-        for relative in bin/install.sh bin/eva LICENSE NOTICE.md docs/licenses/{space-mono,jetbrains-mono,six-caps,intel-one-mono,inter}/OFL.txt; do
+        for relative in bin/install.sh bin/eva LICENSE NOTICE.md docs/ADVANCED.md docs/licenses/{space-mono,jetbrains-mono,six-caps,intel-one-mono,inter}/OFL.txt; do
             path=$(safe_path "$EVA_REPO" "$relative")
             [[ -f $path ]] || die "Missing package file: $relative"
             manager_files["$LIBRARY/$relative"]=$path
