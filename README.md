@@ -2,7 +2,7 @@
 
 EVA-01, Wunder, EVA-02 and Ramiel themes for your GRUB boot menu, with matching 4K wallpapers.
 
-[![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/G3M826JKYV)
+
 
 ## EVA-01
 
@@ -66,5 +66,7 @@ Download the matching 3840×2160 wallpaper and select it in your desktop wallpap
 - [Ramiel wallpaper](wallpapers/Ramiel-wall.png)
 
 For more options, rollback and known limitations, read the [installation guide](docs/ADVANCED.md).
+
+[![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/G3M826JKYV)
 
 [License](LICENSE) · [Artwork and font notices](NOTICE.md)
