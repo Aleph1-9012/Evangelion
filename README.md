@@ -2,6 +2,8 @@
 
 EVA-01, Wunder, EVA-02 and Ramiel themes for your GRUB boot menu, with matching 4K wallpapers.
 
+[![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/G3M826JKYV)
+
 ## EVA-01
 
 ![EVA-01 preview](previews/EVA-01.png)
