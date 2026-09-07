@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 EVA_ACTION=install
 case "${1:-}" in
     uninstall|--uninstall)
@@ -31,4 +31,4 @@ EOF
         exit 0
         ;;
 esac
-exec python3 -B "$SCRIPT_DIR/bin/manage.py" "$EVA_ACTION" "$@"
+exec "$SCRIPT_DIR/bin/eva" "$EVA_ACTION" "$@"

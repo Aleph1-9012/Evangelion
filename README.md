@@ -20,7 +20,9 @@ EVA-01, Wunder, EVA-02 and Ramiel themes for your GRUB boot menu, with matching 
 
 ## Install
 
-Requires **Arch Linux**, **GRUB** already installed, and **Python 3**. Tested with GRUB 2.14.
+Requires **Arch Linux**, an existing **GRUB** installation, **Bash** and **jq**. Tested with GRUB 2.14.
+
+Install jq if needed with `sudo pacman -S --needed jq`.
 
 ```sh
 git clone https://github.com/Aleph1-9012/Evangelion.git

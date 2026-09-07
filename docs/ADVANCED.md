@@ -12,7 +12,7 @@ The release archive includes built runtime files. Install once from the archive 
 sudo ./install.sh
 ```
 
-The interactive chooser asks for a theme and display profile. Installation adds `/usr/local/bin/eva` and a catalog under `/usr/local/share/evangelion`. The catalog includes all validated profiles and the manager's Python files and licenses. Only the selected profile goes into `/boot`.
+The interactive chooser asks for a theme and display profile. Installation adds `/usr/local/bin/eva` and a catalog under `/usr/local/share/evangelion`. The catalog includes all validated profiles and the Bash scripts and licenses. Only the selected profile goes into `/boot`.
 
 Users can then switch from any directory:
 
@@ -38,6 +38,8 @@ sudo eva set wunder 1440p --dry-run
 ```
 
 Only generated EVA-01, Wunder, EVA-02 and Ramiel profiles with a matching `runtime-ready.json` record, PNG artwork, `theme.txt` and `fonts/*.pf2` can be installed. The installer checks the recorded canvas dimensions and every asset's SHA256, requires every referenced image and styled-box center slice, and matches theme font names against the names embedded in the packaged PF2 files. Changed, missing or unrecorded assets require a rebuild.
+
+The installer and chooser use Bash with `jq` to read the asset and ownership records. They do not require Python. Existing v1.0.0 installations can upgrade by rerunning `sudo ./install.sh` from this checkout. The update replaces the old manager while preserving the current choice, rollback snapshot and original GRUB settings.
 
 If an older installation does not list a new theme, rerun `sudo ./install.sh` from the updated checkout to refresh the installed catalog.
 
