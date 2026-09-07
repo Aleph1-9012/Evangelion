@@ -10,7 +10,7 @@ sys.dont_write_bytecode = True
 import install as backend
 
 ROOT = Path(__file__).resolve().parents[1]
-NAMES = {"eva01": "EVA-01", "wunder": "Wunder", "eva02": "EVA-02"}
+NAMES = {"eva01": "EVA-01", "wunder": "Wunder", "eva02": "EVA-02", "ramiel": "Ramiel"}
 PROFILE_NAMES = {"720p": "1280×720", "1080p": "1920×1080", "1440p": "2560×1440 and larger"}
 
 
@@ -143,7 +143,7 @@ No command opens the chooser in an interactive terminal. Rollback restores
 the previous Evangelion choice; uninstall restores the prior GRUB appearance.
 """)
     result.add_argument("command", nargs="?", choices=("choose", "set", "list", "status", "rollback", "uninstall", "install", "help"))
-    result.add_argument("theme", nargs="?", help="eva01, wunder or eva02")
+    result.add_argument("theme", nargs="?", help="eva01, wunder, eva02 or ramiel")
     result.add_argument("profile", nargs="?", help="720p, 1080p or 1440p")
     result.add_argument("--theme", dest="theme_option", help=argparse.SUPPRESS)
     result.add_argument("--profile", dest="profile_option", help=argparse.SUPPRESS)

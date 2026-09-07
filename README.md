@@ -1,6 +1,6 @@
 # Evangelion
 
-EVA-01, Wunder and EVA-02 themes for your GRUB boot menu, with matching 4K wallpapers.
+EVA-01, Wunder, EVA-02 and Ramiel themes for your GRUB boot menu, with matching 4K wallpapers.
 
 ## EVA-01
 
@@ -13,6 +13,10 @@ EVA-01, Wunder and EVA-02 themes for your GRUB boot menu, with matching 4K wallp
 ## EVA-02
 
 ![EVA-02 preview](previews/EVA-02.png)
+
+## Ramiel
+
+![Ramiel preview](previews/Ramiel.png)
 
 ## Install
 
@@ -55,6 +59,7 @@ Download the matching 3840×2160 wallpaper and select it in your desktop wallpap
 - [EVA-01 wallpaper](wallpapers/EVA01-wall.png)
 - [Wunder wallpaper](wallpapers/Wunder-wall.png)
 - [EVA-02 wallpaper](wallpapers/EVA-02-wall.png)
+- [Ramiel wallpaper](wallpapers/Ramiel-wall.png)
 
 For more options, rollback and known limitations, read the [installation guide](docs/ADVANCED.md).
 

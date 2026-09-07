@@ -19,7 +19,7 @@ import tempfile
 
 REPO = Path(__file__).resolve().parents[1]
 PROFILES = {"720p": (1280, 720), "1080p": (1920, 1080), "1440p": (2560, 1440)}
-THEMES = ("eva01", "wunder", "eva02")
+THEMES = ("eva01", "wunder", "eva02", "ramiel")
 DEFAULTS = "etc/default/grub"
 CONFIG = "boot/grub/grub.cfg"
 RUNTIME = "boot/grub/themes/evangelion"
@@ -135,7 +135,8 @@ def manager_files(source: Path) -> dict[str, bytes]:
     files = {}
     for relative in ("bin/install.py", "bin/manage.py", "bin/eva", "LICENSE", "NOTICE.md",
                      "docs/licenses/space-mono/OFL.txt", "docs/licenses/jetbrains-mono/OFL.txt",
-                     "docs/licenses/six-caps/OFL.txt", "docs/licenses/intel-one-mono/OFL.txt"):
+                     "docs/licenses/six-caps/OFL.txt", "docs/licenses/intel-one-mono/OFL.txt",
+                     "docs/licenses/inter/OFL.txt"):
         files[f"{LIBRARY}/{relative}"] = safe_path(REPO, relative).read_bytes()
     files[COMMAND] = files[f"{LIBRARY}/bin/eva"]
     ready_count = 0

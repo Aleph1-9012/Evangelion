@@ -17,7 +17,7 @@ Usage:
   ./install.sh --uninstall [options]
 
 Without a theme and profile, an interactive terminal opens the theme chooser.
-Use eva01, wunder or eva02 with 720p, 1080p or 1440p.
+Use eva01, wunder, eva02 or ramiel with 720p, 1080p or 1440p.
 
 Options:
   --gfxmode WIDTHxHEIGHT  Choose an exact firmware graphics mode

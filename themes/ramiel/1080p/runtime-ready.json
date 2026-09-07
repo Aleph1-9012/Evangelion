@@ -1,0 +1,36 @@
+{
+  "theme": "ramiel",
+  "profile": "1080p",
+  "canvas": [
+    1920,
+    1080
+  ],
+  "ready": true,
+  "readiness": "assets-built; see .dev/docs/runtime-evidence.md in the development checkout for actual VM checks",
+  "fonts": {
+    "menu": "Evangelion ramiel-1080p-menu Regular 25",
+    "timer": "Evangelion ramiel-1080p-timer Regular 17",
+    "selected": "Evangelion ramiel-1080p-selected Regular 24"
+  },
+  "sha256": {
+    "README.md": "796190bb3ee74d0ed0cf9f36d6bdae389a4aa33c02e1bfb8d57d6e14b3fd5678",
+    "background.png": "b785f13736e22f39ca64c22855c4f421de8d4dac7cc49ea264b3514c0d6fa724",
+    "fonts/ramiel-1080p-menu.pf2": "9109d2cadb665a4d1a6f4587fb3bb3fd3010596f39cae8d534bd1eb9aef44034",
+    "fonts/ramiel-1080p-selected.pf2": "d8fb8984c45002d10e1f6e36c5b3a0f55c84ecd23a2307b83ac91ad15ed558b1",
+    "fonts/ramiel-1080p-timer.pf2": "32e4895556517a77d508cc69384d20eda71d0880c4f894afe0c893d58e87e40f",
+    "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
+    "progress/elapsed_c.png": "154584e53d720d8cdd163c188a26c6572482dbd9809d16ef54e3a8ff8b5b39b0",
+    "progress/frame_c.png": "42913cbfbbbd508e7238a768598464204aad1c9bd2ca550141a26cc3d68536d0",
+    "progress/timer-mask.png": "19bc51eb8784a5151eebe7fe82941ec61cf1b8cefec8749250442758ae8bec66",
+    "selectors/item_c.png": "25ab6eb726dd84518b0758613e29de92064fad11913e4e6eac2568ba260abd2c",
+    "selectors/item_e.png": "f7433062b15a1847fa07b9a4e39b1e86a3386add35a14760cb22a7eac7b8a159",
+    "selectors/item_w.png": "6dc34ad79e80386e8844035d7d4ef966a65af86cc1b549b149f89bb4fe90a2fb",
+    "selectors/menu_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
+    "selectors/scrollbar_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
+    "selectors/selected_c.png": "f6a3720900b05cf84f7ac3f0c115236067722c1da2829f28be8c25d8d5cad459",
+    "selectors/selected_e.png": "40fbaa792113f42473de653249e4d512992a6f91ef3533e45c42e42e9f55bd5f",
+    "selectors/selected_w.png": "6a5b6eed835f4515e5bf2bef5485399d7e3d6481f97873ac5378a8c14c0b970d",
+    "selectors/thumb_c.png": "edce6e3ea5a984b18b7f6e4bb63fa726195273e5a8cce45360bcd249d3f33df3",
+    "theme.txt": "c4d2ece32af1c521ede8e0786f67aca5a63d9a3f8b6e3aee20f183ad11dc8711"
+  }
+}
