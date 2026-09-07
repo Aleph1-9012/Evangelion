@@ -21,6 +21,7 @@ Use eva01, wunder, eva02 or ramiel with 720p, 1080p or 1440p.
 
 Options:
   --gfxmode WIDTHxHEIGHT  Choose an exact firmware graphics mode
+  --grub-dir DIRECTORY   Select /boot/grub or /boot/grub2 if both exist
   --dry-run              Preview changes without writing files
   --no-apply             Install only the eva command and theme catalog
   -h, --help             Show this help

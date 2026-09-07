@@ -1,8 +1,14 @@
 # Installation and restoration
 
-The installer targets an existing Arch Linux GRUB installation with `/etc/default/grub`, `/etc/grub.d/00_header` and `/boot/grub/grub.cfg`. It uses the distro's `grub-mkconfig` and `grub-script-check`. It does not install GRUB, change firmware entries, alter kernel arguments, install wallpapers, or reboot.
+The themes use GRUB 2's graphical theme format. The Linux installer requires Bash, jq and an existing GRUB installation with `/etc/default/grub` and `/etc/grub.d/00_header`. It detects `/boot/grub/grub.cfg` or `/boot/grub2/grub.cfg`, and accepts either `grub-mkconfig` / `grub-script-check` or `grub2-mkconfig` / `grub2-script-check`. It does not install GRUB, change firmware entries, alter kernel arguments, install wallpapers, or reboot.
 
 The installer preserves your existing timeout, default boot entry and menu-generation scripts.
+
+There is no distribution-name check. The installation paths and available GRUB tools determine whether the installer can run. Arch Linux with GRUB 2.14 is the hardware-tested environment; the other directory and command layouts are checked in disposable staging roots, not full installations of every distribution.
+
+If both GRUB directories contain configurations, select the active one explicitly, for example `sudo ./install.sh ramiel 1080p --grub-dir /boot/grub2`. Later operations use the directory recorded in the installed theme's ownership paths. The installer writes the main configuration there, not an EFI forwarding file under `/boot/efi/EFI/`.
+
+The paths below show `/boot/grub`; on systems using `/boot/grub2`, the configuration and active theme use that directory instead.
 
 ## Select a theme and graphics mode
 

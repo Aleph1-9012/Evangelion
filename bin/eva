@@ -45,6 +45,7 @@ Options:
   --gfxmode WIDTHxHEIGHT  Choose one exact firmware mode
   --dry-run              Preview changes without applying them
   --no-apply             Install only the command and catalog with install.sh
+  --grub-dir DIRECTORY   Select /boot/grub or /boot/grub2 if both exist
   --root DIRECTORY       Use a staging root instead of the live host
   -h, --help             Show this help
 
@@ -147,9 +148,10 @@ eva_main() {
             --quiet) QUIET=1;;
             --no-apply) no_apply=1;;
             --install-manager) DEPLOY=1;;
-            --root|--source|--generator|--gfxmode|--theme|--profile)
+            --root|--source|--generator|--gfxmode|--theme|--profile|--grub-dir)
                 (($#)) || die "$arg requires a value"
                 case $arg in
+                    --grub-dir) GRUB_DIR_OPTION=$1;;
                     --root) ROOT=$1;; --source) SOURCE=$1;; --generator) GENERATOR=$1;; --gfxmode) MODE=$1;;
                     --theme) [[ -z $named_theme ]] || die 'Supply theme once'; named_theme=$1;;
                     --profile) [[ -z $named_profile ]] || die 'Supply profile once'; named_profile=$1;;

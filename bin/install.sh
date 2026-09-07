@@ -8,8 +8,11 @@ export LC_ALL=C
 
 EVA_REPO=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 DEFAULTS=etc/default/grub
-CONFIG=boot/grub/grub.cfg
-RUNTIME=boot/grub/themes/evangelion
+GRUB_DIR=boot/grub
+GRUB_DIR_OPTION=
+LAYOUT_AMBIGUOUS=0
+CONFIG=$GRUB_DIR/grub.cfg
+RUNTIME=$GRUB_DIR/themes/evangelion
 HOOK=etc/grub.d/99_evangelion
 STATE=var/lib/evangelion-grub/state.json
 BACKUP=var/lib/evangelion-grub/grub.cfg.previous
@@ -96,6 +99,7 @@ validate_choice() {
 
 load_state() {
     local path
+    detect_grub_layout
     STATE_DATA=null
     path=$(safe_path "$ROOT" "$STATE"); regular_or_absent "$path"
     if [[ -f $path ]]; then
@@ -291,12 +295,46 @@ plan_manager() {
     fi
 }
 
-check_system() {
-    local release identity
-    release=$(realpath -e -- "$ROOT/etc/os-release") || die 'Missing OS identity file'
-    [[ $ROOT == / || $release == "$ROOT/"* ]] || die 'The OS identity symlink points outside the staging root'
-    identity=$(sed -nE "s/^ID=[\"']?([^\"']*)[\"']?$/\1/p" "$release")
-    [[ $identity == arch ]] || die 'This installer currently supports Arch Linux (ID=arch) only'
+detect_grub_layout() {
+    local state_path recorded='' candidate path
+    local -a available=()
+    LAYOUT_AMBIGUOUS=0
+    state_path=$(safe_path "$ROOT" "$STATE")
+    regular_or_absent "$state_path"
+    if [[ -f $state_path ]]; then
+        # Existing ownership paths record the directory, including v1 manifests.
+        recorded=$(jq -er '
+            if (.files|type) != "object" then error("Invalid ownership manifest") else
+                [.files|keys[]|capture("^(?<directory>boot/grub2?)/themes/evangelion/").directory] | unique |
+                if length == 1 then .[0] else error("Ambiguous GRUB ownership paths") end
+            end' "$state_path") || die 'Cannot determine the configured GRUB directory from state'
+    fi
+    if [[ -n $GRUB_DIR_OPTION ]]; then
+        case $GRUB_DIR_OPTION in /boot/grub|/boot/grub2) ;; *) die '--grub-dir must be /boot/grub or /boot/grub2';; esac
+        GRUB_DIR=${GRUB_DIR_OPTION#/}
+        [[ -z $recorded || $recorded == "$GRUB_DIR" ]] || die 'The selected GRUB directory differs from the installed theme. Uninstall that theme before changing directories.'
+    elif [[ -n $recorded ]]; then GRUB_DIR=$recorded
+    else
+        for candidate in boot/grub boot/grub2; do
+            path=$(safe_path "$ROOT" "$candidate/grub.cfg")
+            if [[ -f $path ]]; then available+=("$candidate"); fi
+        done
+        case ${#available[@]} in
+            0) GRUB_DIR=boot/grub;; # Catalog-only installation does not need GRUB.
+            1) GRUB_DIR=${available[0]};;
+            *) GRUB_DIR=boot/grub; LAYOUT_AMBIGUOUS=1;;
+        esac
+    fi
+    CONFIG=$GRUB_DIR/grub.cfg
+    RUNTIME=$GRUB_DIR/themes/evangelion
+}
+
+find_grub_command() {
+    local suffix=$1 command
+    for command in "grub-$suffix" "grub2-$suffix"; do
+        if command -v "$command" >/dev/null; then command -v "$command"; return; fi
+    done
+    die "grub-$suffix or grub2-$suffix is required. Install your distribution's GRUB tools."
 }
 
 strip_block() {
@@ -333,7 +371,7 @@ HEADER
         [[ $path == *.pf2 ]] || continue
         # GRUB expands $prefix when the loader runs.
         # shellcheck disable=SC2016
-        printf 'loadfont "$prefix/%s"\n' "${path#boot/grub/}"
+        printf 'loadfont "$prefix/%s"\n' "${path#"$GRUB_DIR/"}"
     done < <(printf '%s\n' "${!FILES[@]}" | sort)
     cat <<'FOOTER'
 if terminal_output gfxterm; then
@@ -351,13 +389,13 @@ plan_changes() {
     # owned_changes reads these arrays through namerefs.
     # shellcheck disable=SC2034
     local -A snapshot=() empty=()
-    check_system
     if [[ $ACTION == setup ]]; then plan_manager; return; fi
     load_state
     if [[ $ACTION == uninstall ]]; then
         plan_manager 1
         [[ $STATE_DATA != null ]] || return 0
     fi
+    ((LAYOUT_AMBIGUOUS == 0)) || die 'Both /boot/grub and /boot/grub2 contain configurations. Choose the active directory with --grub-dir.'
     for relative in "$DEFAULTS" "$CONFIG" etc/grub.d/00_header; do
         path=$(safe_path "$ROOT" "$relative")
         [[ -f $path ]] || die "Existing GRUB installation required: /$relative"
@@ -534,21 +572,22 @@ remove_empty_owned_dirs() {
 }
 
 apply_changes() {
-    local relative mode regenerate=0 path
+    local relative mode regenerate=0 checker
     local -a generator=()
     ((${#PLAN[@]})) || { printf 'Already in the requested state; no changes.\n'; return; }
     [[ $ROOT != / || $EUID == 0 ]] || die 'Host installation requires root; inspect --dry-run before running with sudo'
     if needs_generation; then
-        regenerate=1; need grub-script-check
+        regenerate=1
+        checker=$(find_grub_command script-check)
         if [[ $ROOT != / ]]; then
             [[ -n $GENERATOR ]] || die 'A staging root requires --generator EXECUTABLE; host grub-mkconfig is never run against a stage'
             generator=("$(realpath -e -- "$GENERATOR")" "$ROOT")
         else
             [[ -z $GENERATOR ]] || die '--generator is available only with a staging --root'
-            need grub-mkconfig; generator=(grub-mkconfig -o)
+            generator=("$(find_grub_command mkconfig)" -o)
         fi
         # Test the boot destination before changing defaults or runtime files.
-        CANDIDATE=$(mktemp "$ROOT/boot/grub/.grub.cfg.evangelion-XXXXXX")
+        CANDIDATE=$(mktemp "${ROOT%/}/$GRUB_DIR/.grub.cfg.evangelion-XXXXXX")
     fi
     TRANSACTION=1
     for relative in "${!PLAN[@]}"; do
@@ -559,7 +598,7 @@ apply_changes() {
     done
     if ((regenerate)); then
         "${generator[@]}" "$CANDIDATE" || die "GRUB configuration generation failed"
-        grub-script-check "$CANDIDATE" || die "Generated GRUB configuration failed its syntax check"
+        "$checker" "$CANDIDATE" || die "Generated GRUB configuration failed its syntax check"
         if [[ ! -s $CANDIDATE ]] || ! grep -q '[^[:space:]]' "$CANDIDATE"; then die 'Configuration generator produced an empty file'; fi
         if [[ $ACTION == uninstall ]]; then
             if grep -qF '# Evangelion exact-mode loader' "$CANDIDATE"; then die 'Generated config still contains the Evangelion loader'; fi

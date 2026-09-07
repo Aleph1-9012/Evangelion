@@ -20,9 +20,9 @@ EVA-01, Wunder, EVA-02 and Ramiel themes for your GRUB boot menu, with matching 
 
 ## Install
 
-Requires **Arch Linux**, an existing **GRUB** installation, **Bash** and **jq**. Tested with GRUB 2.14.
+Requires **Linux** with **GRUB 2** installed, plus **Bash** and **jq**. Install jq with your distribution's package manager if needed.
 
-Install jq if needed with `sudo pacman -S --needed jq`.
+The installer detects `/boot/grub` or `/boot/grub2` and the available GRUB tools. Tested on Arch Linux with GRUB 2.14.
 
 ```sh
 git clone https://github.com/Aleph1-9012/Evangelion.git
