@@ -36,6 +36,8 @@ Choose a theme and resolution: **720p**, **1080p** or **1440p**. After installat
 
 Larger display modes can use the 1440p design centered with padding. See the [installation guide](docs/ADVANCED.md) for display options.
 
+All four themes support the [optional GRUB 2.14 patch](docs/GRUB_PATCH.md) that keeps the menu visible during silent manual boot selection. This requires a patched GRUB installation; the theme installer alone does not remove the empty terminal box on stock GRUB. Loading messages and errors remain visible.
+
 ## Switch themes
 
 Run this from any folder:
@@ -67,6 +69,4 @@ Download the matching 3840×2160 wallpaper and select it in your desktop wallpap
 
 For more options, rollback and known limitations, read the [installation guide](docs/ADVANCED.md).
 
-[![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/G3M826JKYV)
-
-[License](LICENSE) · [Artwork and font notices](NOTICE.md)
+[License](LICENSE) · [Artwork and font notices](docs/NOTICE.md)

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: Apache-2.0
+# Installer code: Apache-2.0. Embedded GRUB patch payload: GPL-3.0-or-later.
 # Copyright 2026 Aleph1-9012
 # Shared installation functions for eva; supports existing installation records.
 
@@ -264,16 +264,67 @@ owned_changes() {
     done
 }
 
+# This separate patch payload is GPL-3.0-or-later.
+# See docs/licenses/grub/COPYING and docs/GRUB_PATCH.md.
+emit_grub_patch() {
+    # Encoding preserves the unified diff's significant tabs and blank lines.
+    need base64
+    base64 --decode <<'EVANGELION_GRUB_214_PATCH_BASE64'
+LS0tIGEvZ3J1Yi1jb3JlL25vcm1hbC9tZW51LmMKKysrIGIvZ3J1Yi1jb3JlL25vcm1hbC9tZW51
+LmMKQEAgLTg4NSw3ICs4ODUsMTcgQEAKIAkJCQkJICZleGVjdXRpb25fY2FsbGJhY2ssICZub3Rp
+ZnlfYm9vdCk7CiAgICAgICBlbHNlCiAJeworCSAgY29uc3QgY2hhciAqZGVmZXIgPSBncnViX2Vu
+dl9nZXQgKCJldmFfZGVmZXJfYm9vdF90ZXJtaW5hbCIpOworCSAgaW50IGRlZmVyX2NsZWFyID0g
+ZGVmZXIgJiYgZ3J1Yl9zdHJjbXAgKGRlZmVyLCAiMSIpID09IDAKKwkgICAgJiYgZ3J1Yl9lbnZf
+Z2V0ICgidGhlbWUiKTsKKworCSAgLyogRXhwZXJpbWVudGFsIG9wdC1pbjogcHJlcGFyZSBhIGNs
+ZWFuIHRlcm1pbmFsIHdpdGhvdXQgcGFpbnRpbmcgYW4KKwkgICAgIGVtcHR5IHdpbmRvdyBvdmVy
+IHRoZSBncmFwaGljYWwgbWVudSBkdXJpbmcgYSBzaWxlbnQgZW50cnkuICAqLworCSAgaWYgKGRl
+ZmVyX2NsZWFyKQorCSAgICBncnViX2Vudl9zZXQgKCJldmFfaW50ZXJuYWxfZGVmZXJfY2xlYXIi
+LCAiMSIpOwogCSAgZ3J1Yl9jbHMgKCk7CisJICBpZiAoZGVmZXJfY2xlYXIpCisJICAgIGdydWJf
+ZW52X3Vuc2V0ICgiZXZhX2ludGVybmFsX2RlZmVyX2NsZWFyIik7CiAJICBncnViX21lbnVfZXhl
+Y3V0ZV9lbnRyeSAoZSwgMCk7CiAJfQogICAgICAgaWYgKGF1dG9ib290ZWQpCi0tLSBhL2dydWIt
+Y29yZS90ZXJtL2dmeHRlcm0uYworKysgYi9ncnViLWNvcmUvdGVybS9nZnh0ZXJtLmMKQEAgLTEx
+Nyw2ICsxMTcsOSBAQAogc3RhdGljIGludCByZXBhaW50X3NjaGVkdWxlZCA9IDA7CiBzdGF0aWMg
+aW50IHJlcGFpbnRfd2FzX3NjaGVkdWxlZCA9IDA7CiAKKy8qIEtlZXAgYSBzaWxlbnQgYm9vdCdz
+IGNsZWFyIG9wZXJhdGlvbiBvZmYtc2NyZWVuIHVudGlsIG91dHB1dCBpcyBuZWVkZWQuICAqLwor
+c3RhdGljIGludCBkZWZlcnJlZF9ib290X2NsZWFyID0gMDsKKwogc3RhdGljIHZvaWQgZGVzdHJv
+eV93aW5kb3cgKHZvaWQpOwogCiBzdGF0aWMgc3RydWN0IGdydWJfdmlkZW9fcmVuZGVyX3Rhcmdl
+dCAqdGV4dF9sYXllcjsKQEAgLTQwOCw2ICs0MTEsNyBAQAogc3RhdGljIHZvaWQKIGRlc3Ryb3lf
+d2luZG93ICh2b2lkKQogeworICBkZWZlcnJlZF9ib290X2NsZWFyID0gMDsKICAgZ3J1Yl92aXJ0
+dWFsX3NjcmVlbl9mcmVlICgpOwogfQogCkBAIC04NDYsNiArODUwLDEyIEBACiAgICAgLyogRklY
+TUUgKi8KICAgICByZXR1cm47CiAKKyAgaWYgKGRlZmVycmVkX2Jvb3RfY2xlYXIpCisgICAgewor
+ICAgICAgZGVmZXJyZWRfYm9vdF9jbGVhciA9IDA7CisgICAgICBncnViX2dmeHRlcm1fcmVmcmVz
+aCAodGVybSk7CisgICAgfQorCiAgIC8qIEVyYXNlIGN1cnJlbnQgY3Vyc29yLCBpZiBhbnkuICAq
+LwogICBpZiAodmlydHVhbF9zY3JlZW4uY3Vyc29yX3N0YXRlKQogICAgIGRyYXdfY3Vyc29yICgw
+KTsKQEAgLTEwMzYsNiArMTA0Niw5IEBACiBncnViX2dmeHRlcm1fY2xzIChzdHJ1Y3QgZ3J1Yl90
+ZXJtX291dHB1dCAqdGVybSkKIHsKICAgZ3J1Yl92aWRlb19jb2xvcl90IGNvbG9yOworICBjb25z
+dCBjaGFyICpkZWZlciA9IGdydWJfZW52X2dldCAoImV2YV9pbnRlcm5hbF9kZWZlcl9jbGVhciIp
+OworCisgIGRlZmVycmVkX2Jvb3RfY2xlYXIgPSBkZWZlciAmJiBncnViX3N0cmNtcCAoZGVmZXIs
+ICIxIikgPT0gMDsKIAogICAvKiBDbGVhciB2aXJ0dWFsIHNjcmVlbi4gICovCiAgIGdydWJfdmly
+dHVhbF9zY3JlZW5fY2xzICh0ZXJtKTsKQEAgLTEwODMsNiArMTA5NiwxMiBAQAogZ3J1Yl9nZnh0
+ZXJtX3NldGN1cnNvciAoc3RydWN0IGdydWJfdGVybV9vdXRwdXQgKnRlcm0gX19hdHRyaWJ1dGVf
+XyAoKHVudXNlZCkpLAogCQkJaW50IG9uKQogeworICBpZiAob24gJiYgZGVmZXJyZWRfYm9vdF9j
+bGVhcikKKyAgICB7CisgICAgICBkZWZlcnJlZF9ib290X2NsZWFyID0gMDsKKyAgICAgIGdydWJf
+Z2Z4dGVybV9yZWZyZXNoICh0ZXJtKTsKKyAgICB9CisKICAgaWYgKHZpcnR1YWxfc2NyZWVuLmN1
+cnNvcl9zdGF0ZSAhPSBvbikKICAgICB7CiAgICAgICBpZiAodmlydHVhbF9zY3JlZW4uY3Vyc29y
+X3N0YXRlKQpAQCAtMTA5Nyw2ICsxMTE2LDkgQEAKIHN0YXRpYyB2b2lkCiBncnViX2dmeHRlcm1f
+cmVmcmVzaCAoc3RydWN0IGdydWJfdGVybV9vdXRwdXQgKnRlcm0gX19hdHRyaWJ1dGVfXyAoKHVu
+dXNlZCkpKQogeworICBpZiAoZGVmZXJyZWRfYm9vdF9jbGVhcikKKyAgICByZXR1cm47CisKICAg
+cmVhbF9zY3JvbGwgKCk7CiAKICAgLyogUmVkcmF3IG9ubHkgY2hhbmdlZCByZWdpb25zLiAgKi8K
+EVANGELION_GRUB_214_PATCH_BASE64
+}
+
 plan_manager() {
     local removing=${1:-0} relative path theme profile base count=0 hashes
     local -A manager_files=()
     load_manager
     if ((!removing)); then
-        for relative in bin/install.sh bin/eva LICENSE NOTICE.md docs/ADVANCED.md docs/licenses/{space-mono,jetbrains-mono,six-caps,intel-one-mono,inter}/OFL.txt; do
+        for relative in bin/install.sh bin/eva LICENSE docs/NOTICE.md docs/ADVANCED.md docs/GRUB_PATCH.md docs/licenses/grub/COPYING docs/licenses/{space-mono,jetbrains-mono,six-caps,intel-one-mono,inter}/OFL.txt; do
             path=$(safe_path "$EVA_REPO" "$relative")
             [[ -f $path ]] || die "Missing package file: $relative"
             manager_files["$LIBRARY/$relative"]=$path
         done
+        emit_grub_patch > "$WORK/grub-2.14-deferred-terminal.patch"
+        manager_files["$LIBRARY/patches/grub-2.14-deferred-terminal.patch"]=$WORK/grub-2.14-deferred-terminal.patch
         manager_files["$COMMAND"]=${manager_files[$LIBRARY/bin/eva]}
         for theme in "${THEMES[@]}"; do for profile in "${PROFILES[@]}"; do
             base=$(safe_path "$SOURCE" "$theme/$profile")
@@ -361,6 +412,7 @@ exec tail -n +3 "\$0"
 # Evangelion exact-mode loader
 terminal_output console
 unset theme
+unset eva_defer_boot_terminal
 set gfxmode=$mode,evangelion_no_auto_fallback
 load_video
 insmod gfxterm
@@ -378,6 +430,9 @@ HEADER
 if terminal_output gfxterm; then
   set theme="$prefix/themes/evangelion/theme.txt"
   export theme
+  # Supported by the bundled GRUB patch; stock GRUB ignores this setting.
+  set eva_defer_boot_terminal=1
+  export eva_defer_boot_terminal
 else
   unset theme
   terminal_output console

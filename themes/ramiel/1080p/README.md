@@ -8,4 +8,4 @@ Runtime files are `theme.txt`, `background.png`, `fonts/`, `selectors/` and `pro
 
 Entries and the countdown come from the existing GRUB configuration. 5 rows are visible; larger menus scroll.
 
-See [installation](../../../docs/ADVANCED.md) and [artwork and font notices](../../../NOTICE.md).
+See [installation](../../../docs/ADVANCED.md) and [artwork and font notices](../../../docs/NOTICE.md).

@@ -40,6 +40,7 @@ Usage:
   sudo eva status
   sudo eva rollback
   sudo eva uninstall
+  eva grub-patch > grub-2.14-deferred-terminal.patch
 
 Themes:   eva01, wunder, eva02, ramiel
 Profiles: 720p, 1080p, 1440p
@@ -137,7 +138,7 @@ status() {
 }
 
 eva_main() {
-    local command='' backend=0 no_apply=0 named_theme='' named_profile='' arg theme
+    local command='' backend=0 no_apply=0 named_theme='' named_profile='' arg theme argument_count=$#
     local -a positional=()
     declare -gA CATALOG=()
     THEME='' PROFILE=''
@@ -172,7 +173,12 @@ eva_main() {
         if [[ ! -t 0 || ! -t 1 ]]; then usage; return; fi
         command=choose
     fi
-    case $command in choose|set|list|status|rollback|uninstall|install) ;; setup) ((backend)) || die 'Use install.sh --no-apply';; *) die "Unknown command: $command";; esac
+    case $command in choose|set|list|status|rollback|uninstall|install|grub-patch) ;; setup) ((backend)) || die 'Use install.sh --no-apply';; *) die "Unknown command: $command";; esac
+    if [[ $command == grub-patch ]]; then
+        ((argument_count == 1)) || die 'grub-patch does not take options or arguments.'
+        emit_grub_patch
+        return
+    fi
     [[ -z $THEME || -z $named_theme ]] && [[ -z $PROFILE || -z $named_profile ]] || die 'Supply theme and profile once, as positional values or named options.'
     THEME=${THEME:-$named_theme}; PROFILE=${PROFILE:-$named_profile}
     if [[ $command != install && $command != set && ( -n $THEME || -n $PROFILE ) ]]; then die "$command does not take a theme or profile."; fi

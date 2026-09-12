@@ -7,4 +7,4 @@
 
 These are the original approved desktop wallpaper exports, without a boot menu or live countdown. They are distributed separately from the theme runtime files. The installer does not copy them into GRUB or change the desktop wallpaper.
 
-See [artwork notices](../NOTICE.md).
+See [artwork notices](../docs/NOTICE.md).

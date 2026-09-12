@@ -90,6 +90,8 @@ GRUB_TIMEOUT_STYLE="menu"
 
 Prior assignments remain in place. The last managed assignments suppress early theme loading and request the visible menu; `/etc/grub.d/99_evangelion` then selects the theme after the exact mode initializes. The hook loads the existing `$prefix/fonts/unicode.pf2` terminal font and all packaged PF2 fonts. Keep the distro's Unicode font installed for console and editor readability.
 
+The shared hook enables `eva_defer_boot_terminal=1` after the graphical terminal starts successfully. With the [optional GRUB 2.14 patch](GRUB_PATCH.md), this preserves the menu during silent manual selection for EVA-01, Wunder, EVA-02 and Ramiel, across all three profiles. Stock GRUB ignores the setting. The hook clears it before initializing the display, so console fallback does not enable it. The installer embeds the patch and exports it into the installed catalog; `eva grub-patch` prints a copy. Rebuilding GRUB remains separate. The installer does not replace GRUB binaries or modules.
+
 The installer owns these locations:
 
 | Location | Purpose |
@@ -149,4 +151,4 @@ EVA-02 shows five rows. Its fixed 01–05 labels mark the visible slots while lo
 
 Ramiel shows five rows with Inter lettering and an orange selection marker. Its thin countdown bar and numeric caption disappear when a key cancels automatic boot. Longer menus scroll. Long titles are clipped within the menu width, including some common multiword entries; use GRUB's entry editor to inspect the full title.
 
-An empty terminal box over the theme and a pause of about 10 seconds after selecting an entry have been reported. VM comparisons with Sidonia did not establish a theme-specific cause. The delay remains unresolved; no boot-image or performance changes are included.
+An empty terminal box over the theme and a pause of about 10 seconds after selecting an entry have been reported. The empty box was reproduced in GRUB 2.14 VMs before any kernel ran, with EVA-01 and all four Marathon themes. The [optional GRUB patch](GRUB_PATCH.md) defers that empty clear during silent manual selection. Loading messages, errors, console and editor use still display the terminal. Automatic boot retains its boot announcement. The reported delay remains unresolved.

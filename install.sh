@@ -3,6 +3,10 @@ set -eu
 SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 EVA_ACTION=install
 case "${1:-}" in
+    --print-grub-patch)
+        shift
+        exec "$SCRIPT_DIR/bin/eva" grub-patch "$@"
+        ;;
     uninstall|--uninstall)
         EVA_ACTION=uninstall
         shift
@@ -24,6 +28,7 @@ Options:
   --grub-dir DIRECTORY   Select /boot/grub or /boot/grub2 if both exist
   --dry-run              Preview changes without writing files
   --no-apply             Install only the eva command and theme catalog
+  --print-grub-patch     Print the embedded GRUB 2.14 source patch
   -h, --help             Show this help
 
 The install and uninstall subcommands are also accepted.

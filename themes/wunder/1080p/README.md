@@ -6,6 +6,6 @@ Install through the repository's `install.sh` or `sudo eva` chooser. The loader 
 
 Runtime files are `theme.txt`, `background.png`, `fonts/`, `selectors/` and `progress/`. `runtime-ready.json` records the files checked by the installer.
 
-Entries and the countdown come from the existing GRUB configuration. Four rows are visible; larger menus scroll.
+Entries and the countdown come from the existing GRUB configuration. 4 rows are visible; larger menus scroll.
 
-See [installation](../../../docs/ADVANCED.md) and [artwork and font notices](../../../NOTICE.md).
+See [installation](../../../docs/ADVANCED.md) and [artwork and font notices](../../../docs/NOTICE.md).
