@@ -1,0 +1,199 @@
+# Fixed 2560x1440 canvas; centered padding on larger modes.
+title-text: ""
+desktop-color: "#004CB6"
+
+terminal-font: "Evangelion terminal Regular 16"
+terminal-left: "0"
+terminal-top: "0"
+terminal-width: "100%"
+terminal-height: "100%"
+terminal-border: "0"
+
++ boot_menu {
+  id = "__menu__"
+  left = 50%+121
+  top = 50%-7
+  width = 793
+  height = 400
+  item_font = "Evangelion ayanami-1440p-menu Regular 51"
+  selected_item_font = "Evangelion ayanami-1440p-menu Regular 51"
+  item_color = "#E5EFFF"
+  selected_item_color = "#E5EFFF"
+  item_height = 85
+  item_padding = 0
+  item_spacing = 20
+  icon_width = 53
+  icon_height = 85
+  item_icon_space = 34
+  item_pixmap_style = "selectors/item_*.png"
+  selected_item_pixmap_style = "selectors/selected_*.png"
+  menu_pixmap_style = "selectors/menu_*.png"
+  scrollbar = true
+  scrollbar_width = 4
+  scrollbar_frame = "selectors/scrollbar_*.png"
+  scrollbar_thumb = "selectors/thumb_*.png"
+  scrollbar_thumb_overlay = true
+  scrollbar_slice = east
+  scrollbar_left_pad = 0
+  scrollbar_right_pad = 0
+  scrollbar_top_pad = 0
+  scrollbar_bottom_pad = 0
+}
+
++ label {
+  id = "__timeout__"
+  left = 50%-1059
+  top = 50%+635
+  width = 48
+  height = 39
+  text = "%02d"
+  font = "Evangelion ayanami-1440p-timer Regular 41"
+  color = "#BEDAFF"
+  align = "left"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-1280
+  top = 50%-720
+  width = 2560
+  height = 1440
+  visible = false
+  num_ticks = 0
+  center_bitmap = "progress/timer-mask.png"
+  tick_bitmap = "progress/transparent.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-1204
+  top = 50%+108
+  width = 587
+  height = 587
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -160
+  tick_bitmap = "progress/cell-01.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-1135
+  top = 50%+116
+  width = 578
+  height = 578
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -128
+  tick_bitmap = "progress/cell-02.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-1075
+  top = 50%+108
+  width = 587
+  height = 587
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -96
+  tick_bitmap = "progress/cell-03.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-1010
+  top = 50%+108
+  width = 587
+  height = 587
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -64
+  tick_bitmap = "progress/cell-04.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-941
+  top = 50%+116
+  width = 578
+  height = 578
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -32
+  tick_bitmap = "progress/cell-05.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-881
+  top = 50%+108
+  width = 587
+  height = 587
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = 0
+  tick_bitmap = "progress/cell-06.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-816
+  top = 50%+108
+  width = 587
+  height = 587
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = 32
+  tick_bitmap = "progress/cell-07.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-675
+  top = 50%+269
+  width = 416
+  height = 416
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = 64
+  tick_bitmap = "progress/cell-08.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-943
+  top = 50%+638
+  width = 499
+  height = 46
+  visible = false
+  num_ticks = 0
+  center_bitmap = "progress/timer-base.png"
+  tick_bitmap = "progress/transparent.png"
+}
+
+# GRUB paints children in reverse declaration order.
++ image {
+  left = 50%-1280
+  top = 50%-720
+  width = 2560
+  height = 1440
+  file = "background.png"
+}
+

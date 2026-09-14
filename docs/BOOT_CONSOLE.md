@@ -2,7 +2,7 @@
 
 Every installation uses a graphical theme for choosing an OS, then switches to a full-screen console when an entry starts. GRUB displays the selected entry name. Linux entries show kernel, initramfs and system startup messages as the OS produces them. There is no added sleep, animation or progress simulation.
 
-The four existing themes use the same installer and boot helper. New themes listed in `themes/catalog.json` inherit the handoff. The theme files give GRUB's terminal the full screen, which also prevents the small empty rectangle during stock GRUB's initial clear.
+All seven themes use the same installer and boot helper. New themes listed in `themes/catalog.json` inherit the handoff. The theme files give GRUB's terminal the full screen, which also prevents the small empty rectangle during stock GRUB's initial clear.
 
 ## Adding future themes
 
@@ -23,7 +23,7 @@ Package the matching terminal font with each profile and refresh its asset hashe
 
 The installer keeps the original `/etc/grub.d/` scripts. Its managed block in `/etc/default/grub` directs GNU `grub-mkconfig` through `/var/lib/evangelion-grub/boot/grub.d/00_console`. This proxy runs the original scripts in their usual order, then processes their output. Kernel updates that run `grub-mkconfig` therefore keep the handoff and read the current boot images.
 
-Each generated `menuentry` starts with `terminal_output console`, `clear` and a selected-entry message. Submenus stay graphical until a boot entry is chosen. Existing loading messages and errors remain visible. Entry titles, menu text, fonts and system locale are preserved. The added selected-entry message is in English.
+Each generated `menuentry` starts with `terminal_output console`, `clear` and a selected-entry message. Submenus stay graphical until a boot entry is chosen. Existing loading messages and errors remain visible. Entry titles, menu text, fonts and system locale are preserved. For Ayanami and SEELE, the generator also adds number-icon classes to explicit entries and submenus. Existing IDs, classes and boot commands retain their meaning; submenu numbering starts again at 01. The added selected-entry message is in English.
 
 For direct Linux entries, the helper removes `quiet`, splash and conflicting display settings. It enables kernel and systemd messages, restores the text cursor and disables Plymouth for that boot. Existing root, encryption, resume, recovery and other non-display arguments are retained. Existing `console=` destinations are respected; otherwise it adds `console=tty0`.
 

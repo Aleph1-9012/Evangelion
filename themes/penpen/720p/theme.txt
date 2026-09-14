@@ -1,0 +1,145 @@
+# Fixed 1280x720 canvas; centered padding on larger modes.
+title-text: ""
+desktop-color: "#DD6934"
+
+terminal-font: "Evangelion terminal Regular 16"
+terminal-left: "0"
+terminal-top: "0"
+terminal-width: "100%"
+terminal-height: "100%"
+terminal-border: "0"
+
++ boot_menu {
+  id = "__menu__"
+  left = 50%+70
+  top = 50%+12
+  width = 333
+  height = 158
+  item_font = "Evangelion penpen-720p-menu Regular 24"
+  selected_item_font = "Evangelion penpen-720p-menu Regular 24"
+  item_color = "#253437"
+  selected_item_color = "#253437"
+  item_height = 29
+  item_padding = 0
+  item_spacing = 14
+  icon_width = 0
+  icon_height = 0
+  item_icon_space = 0
+  item_pixmap_style = "selectors/item_*.png"
+  selected_item_pixmap_style = "selectors/selected_*.png"
+  menu_pixmap_style = "selectors/menu_*.png"
+  scrollbar = true
+  scrollbar_width = 2
+  scrollbar_frame = "selectors/scrollbar_*.png"
+  scrollbar_thumb = "selectors/thumb_*.png"
+  scrollbar_thumb_overlay = true
+  scrollbar_slice = east
+  scrollbar_left_pad = 0
+  scrollbar_right_pad = 0
+  scrollbar_top_pad = 0
+  scrollbar_bottom_pad = 0
+}
+
++ label {
+  id = "__timeout__"
+  left = 50%+240
+  top = 50%+217
+  width = 22
+  height = 19
+  text = "%02d"
+  font = "Evangelion penpen-720p-timer Regular 16"
+  color = "#253437"
+  align = "left"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-640
+  top = 50%-360
+  width = 1280
+  height = 720
+  visible = false
+  num_ticks = 0
+  center_bitmap = "progress/timer-mask.png"
+  tick_bitmap = "progress/transparent.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%+17
+  top = 50%-24
+  width = 299
+  height = 299
+  num_ticks = 5
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -140
+  tick_bitmap = "progress/cell-01.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%+45
+  top = 50%-24
+  width = 299
+  height = 299
+  num_ticks = 5
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -89
+  tick_bitmap = "progress/cell-02.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%+75
+  top = 50%-24
+  width = 299
+  height = 299
+  num_ticks = 5
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -38
+  tick_bitmap = "progress/cell-03.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%+104
+  top = 50%-24
+  width = 299
+  height = 299
+  num_ticks = 5
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = 13
+  tick_bitmap = "progress/cell-04.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%+131
+  top = 50%-24
+  width = 299
+  height = 299
+  num_ticks = 5
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = 64
+  tick_bitmap = "progress/cell-05.png"
+}
+
+# GRUB paints children in reverse declaration order.
++ image {
+  left = 50%-640
+  top = 50%-360
+  width = 1280
+  height = 720
+  file = "background.png"
+}
+

@@ -1,0 +1,13 @@
+# Pen-Pen, 1440p
+
+Fixed 2560×1440 GRUB canvas, centered with padding on larger modes.
+
+Install through the repository's `install.sh` or `sudo eva` chooser. The loader selects the graphics mode and loads the packaged PF2 fonts.
+
+Runtime files are `theme.txt`, `background.png`, `fonts/`, `selectors/` and `progress/`. `runtime-ready.json` records the files checked by the installer.
+
+Entries and the countdown come from the existing GRUB configuration. 4 rows are visible; larger menus scroll.
+
+Selecting an entry switches to full-screen console output with live boot messages. See [boot behaviour](../../../docs/BOOT_CONSOLE.md).
+
+See [installation](../../../docs/ADVANCED.md) and [artwork and font notices](../../../docs/NOTICE.md).

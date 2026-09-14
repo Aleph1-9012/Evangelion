@@ -27,6 +27,9 @@ sudo eva
 sudo eva set wunder 1080p
 sudo eva set eva02 1080p
 sudo eva set ramiel 1080p
+sudo eva set ayanami 1080p
+sudo eva set penpen 1080p
+sudo eva set seele 1440p
 sudo eva set eva01 1440p --gfxmode 2560x1600
 eva list
 sudo eva status
@@ -156,6 +159,12 @@ Ramiel passed the same virtual-machine display modes, including menu navigation,
 EVA-02 shows five rows. Its fixed 01–05 labels mark the visible slots while longer menus scroll. Entry titles come from GRUB. Six Caps provides the condensed entry lettering; symbols and languages outside the font's coverage depend on GRUB's fallback fonts. The countdown uses Intel One Mono and a continuous bar. The reference image's small arrow at the fill endpoint is omitted from the live countdown.
 
 Ramiel shows five rows with Inter lettering and an orange selection marker. Its thin countdown bar and numeric caption disappear when a key cancels automatic boot. Longer menus scroll. Long titles are clipped within the menu width, including some common multiword entries; use GRUB's entry editor to inspect the full title.
+
+Ayanami, Pen-Pen and SEELE passed stock GRUB 2.14 tests in disposable UEFI virtual machines at 720p, 1080p and 1440p, plus centered 1440p designs at 2560×1600 and 3840×2160. The checks cover menu navigation, scrolling, countdown expiry and cancellation, submenus, console fallback, direct Linux and UKI boot messages. The owner confirmed all three worked on a physical PC after the fixes for unused row numbers and countdown cancellation.
+
+Ayanami, Pen-Pen and SEELE each show four rows. Ayanami retains the red corner and underline, Pen-Pen uses the orange footprint, and SEELE uses the red eye and underline. Ayanami and SEELE attach number badges to generated entries, restarting at 01 inside each submenu. Numbers move with their entries when the menu scrolls. Unused rows have no number or divider. GRUB supplies the entry titles, and long titles are clipped at the menu edge. The two-digit artwork covers entries 01 to 99; larger menus remain usable, with later entries shown without a number badge.
+
+Their countdown digits show the actual GRUB timeout. Ayanami's crosses and Pen-Pen's footprints start full and disappear as whole cells from right to left. SEELE keeps all eight small bars and moves a single tall marker from 08 to 01. These positions divide the configured timeout into equal stages; the installer preserves the timeout. A key cancels automatic boot and hides the entire countdown: BOOT IN, the remaining seconds, the unit, outlines, timer labels and shapes. SEELE's small bars remain during an active countdown and disappear when it is cancelled.
 
 The empty terminal box was reproduced in stock GRUB 2.14 before any kernel ran, with EVA-01 and all four Marathon themes. The current fix switches to full-screen console output and shows real Linux boot messages. The earlier approach kept the theme frozen while the kernel loaded and has been retired.
 

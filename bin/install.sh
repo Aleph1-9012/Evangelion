@@ -286,7 +286,7 @@ owned_changes() {
 }
 
 plan_manager() {
-    local removing=${1:-0} relative path theme profile base count=0 hashes
+    local removing=${1:-0} relative path theme profile base count=0
     local -A manager_files=()
     load_manager
     if ((!removing)); then
@@ -318,8 +318,8 @@ plan_manager() {
     fi
     owned_changes "$(jq -c '.files // {}' <<< "$MANAGER_DATA")" manager_files "$removing"
     if ((removing)); then plan_add "$MANAGER"; else
-        hashes=$(hash_map manager_files)
-        jq -Sn --argjson files "$hashes" '{version: 1, files: $files}' > "$WORK/manager.json"
+        # The full catalog can exceed the OS limit for one argv string.
+        hash_map manager_files | jq -S '{version: 1, files: .}' > "$WORK/manager.json"
         plan_add "$MANAGER" "$WORK/manager.json"
     fi
 }
@@ -482,6 +482,9 @@ plan_changes() {
     {
         printf '%s\n' "$BEGIN" '# The late loader selects the theme only after the exact mode succeeds.' 'GRUB_THEME=""' 'GRUB_FONT=""' "GRUB_GFXMODE=\"$mode\"" 'GRUB_TIMEOUT_STYLE="menu"'
         printf '%s\n' '# Process the current GRUB generators on every configuration refresh.' 'if [ -n "${grub_mkconfig_dir-}" ]; then' '  export EVANGELION_GRUB_SOURCE_DIR="$grub_mkconfig_dir"'
+        if [[ $THEME == ayanami || $THEME == seele ]]; then
+            printf '%s\n' '  export EVANGELION_NUMBERED_MENU=1'
+        fi
         printf '  grub_mkconfig_dir=%s\n' "$(shell_quote "${ROOT%/}/$BOOT_RUNTIME/grub.d")"
         printf '%s\n' 'fi' "$END"
     } > "$WORK/block"
@@ -646,7 +649,9 @@ apply_changes() {
         "${generator[@]}" "$CANDIDATE" || die "GRUB configuration generation failed"
         if [[ $ACTION != uninstall ]]; then
             # Staging generators need the same transformation as the live proxy.
-            python3 "$ROOT/$BOOT_HELPER" filter "$CANDIDATE" --root "$ROOT" > "$WORK/console-config" || die 'Console handoff generation failed'
+            local -a helper_options=()
+            if [[ $THEME == ayanami || $THEME == seele ]]; then helper_options+=(--numbered); fi
+            python3 "$ROOT/$BOOT_HELPER" filter "$CANDIDATE" --root "$ROOT" "${helper_options[@]}" > "$WORK/console-config" || die 'Console handoff generation failed'
             cat -- "$WORK/console-config" > "$CANDIDATE"
         fi
         "$checker" "$CANDIDATE" || die "Generated GRUB configuration failed its syntax check"

@@ -1,0 +1,297 @@
+# Fixed 2560x1440 canvas; centered padding on larger modes.
+title-text: ""
+desktop-color: "#DAD8D1"
+
+terminal-font: "Evangelion terminal Regular 16"
+terminal-left: "0"
+terminal-top: "0"
+terminal-width: "100%"
+terminal-height: "100%"
+terminal-border: "0"
+
++ boot_menu {
+  id = "__menu__"
+  left = 50%+232
+  top = 50%-65
+  width = 985
+  height = 381
+  item_font = "Evangelion seele-1440p-menu Regular 43"
+  selected_item_font = "Evangelion seele-1440p-menu Regular 43"
+  item_color = "#171A1A"
+  selected_item_color = "#B8313E"
+  item_height = 54
+  item_padding = 0
+  item_spacing = 55
+  icon_width = 39
+  icon_height = 54
+  item_icon_space = 205
+  item_pixmap_style = "selectors/item_*.png"
+  selected_item_pixmap_style = "selectors/selected_*.png"
+  menu_pixmap_style = "selectors/menu_*.png"
+  scrollbar = true
+  scrollbar_width = 4
+  scrollbar_frame = "selectors/scrollbar_*.png"
+  scrollbar_thumb = "selectors/thumb_*.png"
+  scrollbar_thumb_overlay = true
+  scrollbar_slice = east
+  scrollbar_left_pad = 0
+  scrollbar_right_pad = 0
+  scrollbar_top_pad = 0
+  scrollbar_bottom_pad = 0
+}
+
++ label {
+  id = "__timeout__"
+  left = 50%+531
+  top = 50%-265
+  width = 70
+  height = 50
+  text = "%02d"
+  font = "Evangelion seele-1440p-timer Regular 51"
+  color = "#171A1A"
+  align = "left"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-1280
+  top = 50%-720
+  width = 2560
+  height = 1440
+  visible = false
+  num_ticks = 0
+  center_bitmap = "progress/timer-mask.png"
+  tick_bitmap = "progress/transparent.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-654
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -128
+  tick_bitmap = "progress/cover-01.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-654
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -160
+  tick_bitmap = "progress/cell-01.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-610
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -96
+  tick_bitmap = "progress/cover-02.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-610
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -128
+  tick_bitmap = "progress/cell-02.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-564
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -64
+  tick_bitmap = "progress/cover-03.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-564
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -96
+  tick_bitmap = "progress/cell-03.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-519
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -32
+  tick_bitmap = "progress/cover-04.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-519
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -64
+  tick_bitmap = "progress/cell-04.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-473
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = 0
+  tick_bitmap = "progress/cover-05.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-473
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = -32
+  tick_bitmap = "progress/cell-05.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-429
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = 32
+  tick_bitmap = "progress/cover-06.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-429
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = 0
+  tick_bitmap = "progress/cell-06.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-383
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = 64
+  tick_bitmap = "progress/cover-07.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-383
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = 32
+  tick_bitmap = "progress/cell-07.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-339
+  top = 50%-347
+  width = 974
+  height = 974
+  num_ticks = 8
+  ticks_disappear = true
+  center_bitmap = "progress/transparent.png"
+  visible = false
+  start_angle = 64
+  tick_bitmap = "progress/cell-08.png"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%-181
+  top = 50%+518
+  width = 343
+  height = 108
+  visible = false
+  num_ticks = 0
+  center_bitmap = "progress/timer-base.png"
+  tick_bitmap = "progress/transparent.png"
+}
+
+# GRUB paints children in reverse declaration order.
++ image {
+  left = 50%-1280
+  top = 50%-720
+  width = 2560
+  height = 1440
+  file = "background.png"
+}
+

@@ -1,6 +1,6 @@
 # Evangelion
 
-EVA-01, Wunder, EVA-02 and Ramiel themes for your GRUB boot menu, with matching 4K wallpapers.
+Seven Evangelion themes for your GRUB boot menu: EVA-01, Wunder, EVA-02, Ramiel, Ayanami, Pen-Pen and SEELE. All include 720p, 1080p and 1440p profiles and matching 4K wallpapers.
 
 
 
@@ -19,6 +19,20 @@ EVA-01, Wunder, EVA-02 and Ramiel themes for your GRUB boot menu, with matching 
 ## Ramiel
 
 ![Ramiel preview](previews/Ramiel.png)
+
+The Ayanami, Pen-Pen and SEELE previews below are captured from GRUB.
+
+## Ayanami
+
+![Ayanami preview](previews/Ayanami.png)
+
+## Pen-Pen
+
+![Pen-Pen preview](previews/Pen-Pen.png)
+
+## SEELE
+
+![SEELE preview](previews/SEELE.png)
 
 ## Install
 
@@ -46,7 +60,13 @@ Run this from any folder:
 sudo eva
 ```
 
-Choose another theme or resolution. Your selection takes effect on the next boot.
+Choose another theme or resolution. Your selection takes effect on the next boot. You can also select a theme directly:
+
+```sh
+sudo eva set ayanami 1080p
+sudo eva set penpen 1080p
+sudo eva set seele 1440p
+```
 
 ## Uninstall
 
@@ -66,6 +86,9 @@ Download the matching 3840×2160 wallpaper and select it in your desktop wallpap
 - [Wunder wallpaper](wallpapers/Wunder-wall.png)
 - [EVA-02 wallpaper](wallpapers/EVA-02-wall.png)
 - [Ramiel wallpaper](wallpapers/Ramiel-wall.png)
+- [Ayanami wallpaper](wallpapers/Ayanami-wall.png)
+- [Pen-Pen wallpaper](wallpapers/Pen-Pen-wall.png)
+- [SEELE wallpaper](wallpapers/SEELE-wall.png)
 
 For more options, rollback and known limitations, read the [installation guide](docs/ADVANCED.md).
 

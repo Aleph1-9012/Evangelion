@@ -4,6 +4,9 @@
     {"id": "eva01", "name": "EVA-01"},
     {"id": "wunder", "name": "Wunder"},
     {"id": "eva02", "name": "EVA-02"},
-    {"id": "ramiel", "name": "Ramiel"}
+    {"id": "ramiel", "name": "Ramiel"},
+    {"id": "ayanami", "name": "Ayanami"},
+    {"id": "penpen", "name": "Pen-Pen"},
+    {"id": "seele", "name": "SEELE"}
   ]
 }
