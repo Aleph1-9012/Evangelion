@@ -8,4 +8,6 @@ Runtime files are `theme.txt`, `background.png`, `fonts/`, `selectors/` and `pro
 
 Entries and the countdown come from the existing GRUB configuration. 4 rows are visible; larger menus scroll.
 
+Selecting an entry switches to full-screen console output with live boot messages. See [boot behaviour](../../../docs/BOOT_CONSOLE.md).
+
 See [installation](../../../docs/ADVANCED.md) and [artwork and font notices](../../../docs/NOTICE.md).

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "themes": [
+    {"id": "eva01", "name": "EVA-01"},
+    {"id": "wunder", "name": "Wunder"},
+    {"id": "eva02", "name": "EVA-02"},
+    {"id": "ramiel", "name": "Ramiel"}
+  ]
+}

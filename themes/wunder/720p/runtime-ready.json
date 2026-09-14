@@ -12,7 +12,7 @@
     "timer": "Evangelion wunder-720p-timer Regular 16"
   },
   "sha256": {
-    "README.md": "ee4b78a305a0fcd00399e8ba4b2b7f4d7eeef36eed2c78ce2c6a32e088c1b6a9",
+    "README.md": "81d414a77bd2ee4ecab2abe005fdb9ac611f3fc17de21f894dd350e3db2aa43d",
     "background.png": "73ecf11a9651920806d7e74ee602695d18484e9a1c0ee53533c87385e89bcda6",
     "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
     "fonts/wunder-720p-menu.pf2": "6cb9be3db34f92cb7dbf6bd4fd790a02d88698e52bbe08898bbaf1a200cdb7f1",
@@ -31,6 +31,6 @@
     "selectors/selected_e.png": "2a651bd8655e8777d7da6bde9fc3a322c07ba8ced95f758e39228f9e16514ed6",
     "selectors/selected_w.png": "57f76446854865ea95ef7c9ee2eba3fda6af48a563c55730a9ddb3319d0484f1",
     "selectors/thumb_c.png": "c592ab56bedeecee8887f79373db2af0b72a94f5275bcb36ebd803df9b903607",
-    "theme.txt": "85b2e8522288d58575f116172b003a7d27e559dd68788386bffd125284396490"
+    "theme.txt": "071a634e5c1e43bfc6bbbb0a258599aa847aff80a8d9b55680be16388771eb11"
   }
 }

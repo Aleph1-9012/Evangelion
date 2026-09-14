@@ -13,7 +13,7 @@
     "selected": "Evangelion eva02-1080p-selected Regular 46"
   },
   "sha256": {
-    "README.md": "97b3e7013a92e334e7c6110a9c3da841a8048ec45710495f8f7032eea5c0c036",
+    "README.md": "5826f6ceb023e2499a66b17267d12e0dd85035a472c40c03f4869c783e2566b6",
     "background.png": "5e7a714b9bc7e301879adfe88f1bde12cf7eb61cb3317bdca858f9a37fa63e3e",
     "fonts/eva02-1080p-menu.pf2": "819a97fd02f41794d63574107e624f6c31f82d1c4e2508d7c6bdb876628d2f41",
     "fonts/eva02-1080p-selected.pf2": "7137fdda4e50c620ae06701e16afd71a5986790396418f2745db6c646606458b",
@@ -31,6 +31,6 @@
     "selectors/selected_e.png": "3da4d23b905ea4d81c0ddc846442d30a7338a822c6fc201c3aaf883253251300",
     "selectors/selected_w.png": "f3bbfc5447a2cdb3a7a331c6b3a622330efa9b14aadd7249a76b2380b1dcc992",
     "selectors/thumb_c.png": "9f33c4843bf24f6a377144dbec531874ea57e7ab510d738e88989a24030cbbd5",
-    "theme.txt": "fed8817bcd62bc43276b66566c617b8c0a4807112a1683c82172bf433f9a4998"
+    "theme.txt": "3a69a4a6ce89b059a3530321dd4858c698c8a9f3d26b3fedab4aa22fae75ac37"
   }
 }

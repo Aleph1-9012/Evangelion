@@ -13,7 +13,7 @@
     "selected": "Evangelion ramiel-1440p-selected Regular 32"
   },
   "sha256": {
-    "README.md": "c81aa8a3e5d101b3b03e2d72bc571d0cf5003d17667055eda7c6ffa093d54a63",
+    "README.md": "eed38f4b047fbffe8a8b94c3ba642bc3f225e1941f48c3aa09bc5cf0a0a07813",
     "background.png": "6bbe07447e150f3a3cd69cdae40a7e694393da8c8c126ec00784e3e2b6d6a177",
     "fonts/ramiel-1440p-menu.pf2": "1e8671379047414d75fd95de9235816c7dd7c973bf9b39742a51a34a630cc775",
     "fonts/ramiel-1440p-selected.pf2": "066d4948ad883e04b939fa1591220dbde244a90e6d4ebd9403b695d771f6231a",
@@ -31,6 +31,6 @@
     "selectors/selected_e.png": "50c34aea64d87732f874f2512f999ae9fc0a409f9130401b3db9c2f31317ebbc",
     "selectors/selected_w.png": "38ebc72389f4437730438148bb5f827ac5a932110d0d924a40a2d9623e6555cc",
     "selectors/thumb_c.png": "edce6e3ea5a984b18b7f6e4bb63fa726195273e5a8cce45360bcd249d3f33df3",
-    "theme.txt": "b9513ea395351efa1b77a836541168298f28807fd79055eb4ae087784b3009ba"
+    "theme.txt": "7a465f6d6a655744e4f2d8db9c5f1c7ed8670a0763d7e6acd424826eeb95f032"
   }
 }

@@ -3,10 +3,6 @@ set -eu
 SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 EVA_ACTION=install
 case "${1:-}" in
-    --print-grub-patch)
-        shift
-        exec "$SCRIPT_DIR/bin/eva" grub-patch "$@"
-        ;;
     uninstall|--uninstall)
         EVA_ACTION=uninstall
         shift
@@ -21,14 +17,13 @@ Usage:
   ./install.sh --uninstall [options]
 
 Without a theme and profile, an interactive terminal opens the theme chooser.
-Use eva01, wunder, eva02 or ramiel with 720p, 1080p or 1440p.
+Run ./bin/eva list for available themes. Profiles are 720p, 1080p and 1440p.
 
 Options:
   --gfxmode WIDTHxHEIGHT  Choose an exact firmware graphics mode
   --grub-dir DIRECTORY   Select /boot/grub or /boot/grub2 if both exist
   --dry-run              Preview changes without writing files
   --no-apply             Install only the eva command and theme catalog
-  --print-grub-patch     Print the embedded GRUB 2.14 source patch
   -h, --help             Show this help
 
 The install and uninstall subcommands are also accepted.

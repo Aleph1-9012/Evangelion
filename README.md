@@ -22,7 +22,7 @@ EVA-01, Wunder, EVA-02 and Ramiel themes for your GRUB boot menu, with matching 
 
 ## Install
 
-Requires **Linux** with **GRUB 2** installed, plus **Bash** and **jq**. Install jq with your distribution's package manager if needed.
+Requires **Linux** with **GRUB 2** installed, plus **Bash**, **jq** and **Python 3.9 or newer**. Install jq with your distribution's package manager if needed.
 
 The installer detects `/boot/grub` or `/boot/grub2` and the available GRUB tools. Tested on Arch Linux with GRUB 2.14.
 
@@ -36,7 +36,7 @@ Choose a theme and resolution: **720p**, **1080p** or **1440p**. After installat
 
 Larger display modes can use the 1440p design centered with padding. See the [installation guide](docs/ADVANCED.md) for display options.
 
-All four themes support the [optional GRUB 2.14 patch](docs/GRUB_PATCH.md) that keeps the menu visible during silent manual boot selection. This requires a patched GRUB installation; the theme installer alone does not remove the empty terminal box on stock GRUB. Loading messages and errors remain visible.
+Selecting an OS switches to a full-screen console with live boot messages. This is the default for every theme and works with stock GRUB. See [boot behaviour and compatibility](docs/BOOT_CONSOLE.md).
 
 ## Switch themes
 

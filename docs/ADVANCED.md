@@ -1,6 +1,6 @@
 # Installation and restoration
 
-The themes use GRUB 2's graphical theme format. The Linux installer requires Bash, jq and an existing GRUB installation with `/etc/default/grub` and `/etc/grub.d/00_header`. It detects `/boot/grub/grub.cfg` or `/boot/grub2/grub.cfg`, and accepts either `grub-mkconfig` / `grub-script-check` or `grub2-mkconfig` / `grub2-script-check`. It does not install GRUB, change firmware entries, alter kernel arguments, install wallpapers, or reboot.
+The themes use GRUB 2's graphical theme format. The Linux installer requires Bash, jq, Python 3.9 or newer and an existing GRUB installation with `/etc/default/grub` and `/etc/grub.d/00_header`. It detects `/boot/grub/grub.cfg` or `/boot/grub2/grub.cfg`, and accepts either `grub-mkconfig` / `grub-script-check` or `grub2-mkconfig` / `grub2-script-check`. It does not install GRUB, change firmware entries, install wallpapers, or reboot. It changes Linux display arguments in generated entries to show live boot messages, as described in [boot behaviour](BOOT_CONSOLE.md).
 
 The installer preserves your existing timeout, default boot entry and menu-generation scripts.
 
@@ -18,7 +18,7 @@ The repository includes ready-to-use theme files. Install once from the download
 sudo ./install.sh
 ```
 
-The interactive chooser asks for a theme and display profile. Installation adds `/usr/local/bin/eva` and a catalog under `/usr/local/share/evangelion`. The catalog includes all validated profiles and the Bash scripts and licenses. Only the selected profile goes into `/boot`.
+The interactive chooser asks for a theme and display profile. Installation adds `/usr/local/bin/eva` and a catalog under `/usr/local/share/evangelion`. The catalog includes all validated profiles and the installer scripts and licenses. Only the selected profile goes into `/boot`.
 
 Users can then switch from any directory:
 
@@ -43,9 +43,9 @@ Initial direct selection accepts `sudo ./install.sh eva01 1440p`, or the origina
 sudo eva set wunder 1440p --dry-run
 ```
 
-Only generated EVA-01, Wunder, EVA-02 and Ramiel profiles with a matching `runtime-ready.json` record, PNG artwork, `theme.txt` and `fonts/*.pf2` can be installed. The installer checks the recorded canvas dimensions and every asset's SHA256, requires every referenced image and styled-box center slice, and matches theme font names against the names embedded in the packaged PF2 files. Changed, missing or unrecorded assets require a rebuild.
+Only profiles listed in `themes/catalog.json` with a matching `runtime-ready.json` record, PNG artwork, `theme.txt` and `fonts/*.pf2` can be installed. The installer checks the recorded canvas dimensions and every asset's SHA256, requires every referenced image and styled-box center slice, and matches theme font names against the names embedded in the packaged PF2 files. Changed, missing or unrecorded assets require a rebuild.
 
-The installer and chooser use Bash with `jq` to read the asset and ownership records. To refresh the installed command and theme catalog, run `sudo ./install.sh --no-apply` from the updated folder. This preserves the current choice, rollback snapshot and original GRUB settings.
+The installer and chooser use Bash with `jq` to read the asset and ownership records. Python processes generated boot entries as data. To refresh the installed command and theme catalog, run `sudo ./install.sh --no-apply` from the updated folder. This preserves the current choice, rollback snapshot and original GRUB settings.
 
 The three design sizes are `720p`, `1080p` and `1440p`. Graphics mode and design size are separate. A larger mode keeps the design at its native dimensions, centered with padding. For example, `1440p --gfxmode 3840x2160` uses the 2560×1440 design on a 3840×2160 framebuffer. There is no separately scaled 4K design. The installer rejects a mode smaller than the selected design.
 
@@ -85,12 +85,17 @@ GRUB_THEME=""
 GRUB_FONT=""
 GRUB_GFXMODE="2560x1600"
 GRUB_TIMEOUT_STYLE="menu"
+# Process the current GRUB generators on every configuration refresh.
+if [ -n "${grub_mkconfig_dir-}" ]; then
+  export EVANGELION_GRUB_SOURCE_DIR="$grub_mkconfig_dir"
+  grub_mkconfig_dir='/var/lib/evangelion-grub/boot/grub.d'
+fi
 # END EVANGELION GRUB
 ```
 
 Prior assignments remain in place. The last managed assignments suppress early theme loading and request the visible menu; `/etc/grub.d/99_evangelion` then selects the theme after the exact mode initializes. The hook loads the existing `$prefix/fonts/unicode.pf2` terminal font and all packaged PF2 fonts. Keep the distro's Unicode font installed for console and editor readability.
 
-The shared hook enables `eva_defer_boot_terminal=1` after the graphical terminal starts successfully. With the [optional GRUB 2.14 patch](GRUB_PATCH.md), this preserves the menu during silent manual selection for EVA-01, Wunder, EVA-02 and Ramiel, across all three profiles. Stock GRUB ignores the setting. The hook clears it before initializing the display, so console fallback does not enable it. The installer embeds the patch and exports it into the installed catalog; `eva grub-patch` prints a copy. Rebuilding GRUB remains separate. The installer does not replace GRUB binaries or modules.
+The shared console generator adds the handoff to generated boot entries during installation and later `grub-mkconfig` runs. It calls the original scripts in order and preserves their files. All themes inherit this behaviour through the installer. No patched GRUB binaries or modules are required.
 
 The installer owns these locations:
 
@@ -99,6 +104,7 @@ The installer owns these locations:
 | `/boot/grub/themes/evangelion/` | One active runtime profile; the manifest tracks individual files |
 | `/etc/grub.d/99_evangelion` | Generated executable shell hook emitting the GRUB loader |
 | One marked block in `/etc/default/grub` | Theme settings, removable without restoring the entire file |
+| `/var/lib/evangelion-grub/boot/` | Shared console generator and Python helper, used on every menu refresh |
 | `/var/lib/evangelion-grub/state.json` | Current choice, original relevant setting lines and owned-file hashes |
 | `/var/lib/evangelion-grub/grub.cfg.previous` | Exactly one previous generated configuration, retained for recovery |
 | `/var/lib/evangelion-grub/previous/` | One previous runtime snapshot for theme rollback |
@@ -151,4 +157,6 @@ EVA-02 shows five rows. Its fixed 01–05 labels mark the visible slots while lo
 
 Ramiel shows five rows with Inter lettering and an orange selection marker. Its thin countdown bar and numeric caption disappear when a key cancels automatic boot. Longer menus scroll. Long titles are clipped within the menu width, including some common multiword entries; use GRUB's entry editor to inspect the full title.
 
-An empty terminal box over the theme and a pause of about 10 seconds after selecting an entry have been reported. The empty box was reproduced in GRUB 2.14 VMs before any kernel ran, with EVA-01 and all four Marathon themes. The [optional GRUB patch](GRUB_PATCH.md) defers that empty clear during silent manual selection. Loading messages, errors, console and editor use still display the terminal. Automatic boot retains its boot announcement. The reported delay remains unresolved.
+The empty terminal box was reproduced in stock GRUB 2.14 before any kernel ran, with EVA-01 and all four Marathon themes. The current fix switches to full-screen console output and shows real Linux boot messages. The earlier approach kept the theme frozen while the kernel loaded and has been retired.
+
+The current installer and console handoff were confirmed after a physical reboot on the Arch/Omarchy machine using Wunder's 1440p profile at 2560×1600 and its original Linux EFI image. Boot messages appeared as intended. The handoff adds no boot delay, but it does not remove time spent loading the kernel, initramfs or graphics drivers. The menu timeout still applies before an entry is selected.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installer code: Apache-2.0. Embedded GRUB patch payload: GPL-3.0-or-later.
+# SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 Aleph1-9012
 # Shared installation functions for eva; supports existing installation records.
 
@@ -20,11 +20,15 @@ LIBRARY=usr/local/share/evangelion
 COMMAND=usr/local/bin/eva
 MANAGER=var/lib/evangelion-grub/manager.json
 PREVIOUS=var/lib/evangelion-grub/previous
+BOOT_RUNTIME=var/lib/evangelion-grub/boot
+BOOT_HELPER=$BOOT_RUNTIME/boot-console
+BOOT_PROXY=$BOOT_RUNTIME/grub.d/00_console
 BEGIN='# BEGIN EVANGELION GRUB (managed; use install.sh --uninstall)'
 # Recognize blocks written before install and uninstall shared one entry point.
 LEGACY_BEGIN='# BEGIN EVANGELION GRUB (managed; use uninstall.sh)'
 END='# END EVANGELION GRUB'
-THEMES=(eva01 wunder eva02 ramiel)
+THEMES=()
+declare -A THEME_NAMES=()
 PROFILES=(720p 1080p 1440p)
 WORK='' CANDIDATE='' ATOMIC_TEMP='' TRANSACTION=0
 ROOT=/ SOURCE="$EVA_REPO/themes" MODE='' GENERATOR='' ACTION='' DRY_RUN=0 QUIET=0 DEPLOY=0
@@ -37,6 +41,7 @@ declare -a SAVED_ORDER=() CREATED_DIRS=()
 die() { printf 'eva: %s\n' "$*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null || die "$1 is required."; }
 sha() { local result; result=$(sha256sum -- "$1") || die "Cannot hash $1"; printf '%s' "${result%% *}"; }
+shell_quote() { printf "'%s'" "${1//\'/\'\\\'\'}"; }
 
 safe_path() {
     local relative=$2 part cursor=$1
@@ -57,6 +62,21 @@ regular_or_absent() {
 
 profile_mode() {
     case $1 in 720p) printf '1280x720';; 1080p) printf '1920x1080';; 1440p) printf '2560x1440';; *) die "Unknown profile: $1";; esac
+}
+
+load_catalog() {
+    local catalog theme name
+    THEMES=(); THEME_NAMES=()
+    catalog=$(safe_path "$SOURCE" catalog.json)
+    # Uninstall and rollback can use saved ownership without the source catalog.
+    [[ -f $catalog ]] || return 0
+    jq -e '.version == 1 and (.themes|type == "array") and
+        all(.themes[]; (.id|type == "string" and test("^[a-z][a-z0-9_-]*$")) and
+            (.name|type == "string" and length > 0 and (test("[[:cntrl:]]")|not))) and
+        ([.themes[].id]|length == (unique|length))' "$catalog" >/dev/null || die 'Invalid theme catalog'
+    while IFS=$'\t' read -r theme name; do
+        THEMES+=("$theme"); THEME_NAMES["$theme"]=$name
+    done < <(jq -r '.themes[]|[.id,.name]|join("\t")' "$catalog")
 }
 
 mode_for() {
@@ -93,7 +113,7 @@ validate_choice() {
     local data=$1 theme profile mode
     jq -e --arg path "$RUNTIME/theme.txt" 'type == "object" and (.files|type == "object") and (.files|has($path)) and (.gfxmode|type == "string")' <<< "$data" >/dev/null || die 'Invalid theme-choice record'
     theme=$(jq -r .theme <<< "$data"); profile=$(jq -r .profile <<< "$data"); mode=$(jq -r .gfxmode <<< "$data")
-    case $theme in eva01|wunder|eva02|ramiel) ;; *) die 'Invalid theme-choice record';; esac
+    [[ $theme =~ ^[a-z][a-z0-9_-]*$ ]] || die 'Invalid theme-choice record'
     mode_for "$profile" "$mode" >/dev/null
     validate_hashes "$(jq -c .files <<< "$data")" "$RUNTIME"
 }
@@ -106,12 +126,13 @@ load_state() {
     if [[ -f $path ]]; then
         STATE_DATA=$(cat -- "$path")
         jq -e --arg begin "$BEGIN" --arg legacy "$LEGACY_BEGIN" '
-            type == "object" and (.version == 1 or .version == 2) and
+            type == "object" and (.version == 1 or .version == 2 or .version == 3) and
             (.block|type == "string") and (.block|startswith($begin+"\n") or startswith($legacy+"\n")) and
             (.hook_hash|type == "string") and (.hook_hash|test("^[a-f0-9]{64}$")) and
             (.prior_setting_lines|type == "array") and all(.prior_setting_lines[]; type == "string") and
             ((.added_newline // false)|type == "boolean")' <<< "$STATE_DATA" >/dev/null || die 'Unsupported or damaged ownership manifest'
         validate_choice "$STATE_DATA"
+        validate_hashes "$(jq -c '.boot_files // {}' <<< "$STATE_DATA")" "$BOOT_RUNTIME"
         if [[ $(jq -r '.previous != null' <<< "$STATE_DATA") == true ]]; then validate_choice "$(jq -c .previous <<< "$STATE_DATA")"; fi
     fi
 }
@@ -264,68 +285,24 @@ owned_changes() {
     done
 }
 
-# This separate patch payload is GPL-3.0-or-later.
-# See docs/licenses/grub/COPYING and docs/GRUB_PATCH.md.
-emit_grub_patch() {
-    # Encoding preserves the unified diff's significant tabs and blank lines.
-    need base64
-    base64 --decode <<'EVANGELION_GRUB_214_PATCH_BASE64'
-LS0tIGEvZ3J1Yi1jb3JlL25vcm1hbC9tZW51LmMKKysrIGIvZ3J1Yi1jb3JlL25vcm1hbC9tZW51
-LmMKQEAgLTg4NSw3ICs4ODUsMTcgQEAKIAkJCQkJICZleGVjdXRpb25fY2FsbGJhY2ssICZub3Rp
-ZnlfYm9vdCk7CiAgICAgICBlbHNlCiAJeworCSAgY29uc3QgY2hhciAqZGVmZXIgPSBncnViX2Vu
-dl9nZXQgKCJldmFfZGVmZXJfYm9vdF90ZXJtaW5hbCIpOworCSAgaW50IGRlZmVyX2NsZWFyID0g
-ZGVmZXIgJiYgZ3J1Yl9zdHJjbXAgKGRlZmVyLCAiMSIpID09IDAKKwkgICAgJiYgZ3J1Yl9lbnZf
-Z2V0ICgidGhlbWUiKTsKKworCSAgLyogRXhwZXJpbWVudGFsIG9wdC1pbjogcHJlcGFyZSBhIGNs
-ZWFuIHRlcm1pbmFsIHdpdGhvdXQgcGFpbnRpbmcgYW4KKwkgICAgIGVtcHR5IHdpbmRvdyBvdmVy
-IHRoZSBncmFwaGljYWwgbWVudSBkdXJpbmcgYSBzaWxlbnQgZW50cnkuICAqLworCSAgaWYgKGRl
-ZmVyX2NsZWFyKQorCSAgICBncnViX2Vudl9zZXQgKCJldmFfaW50ZXJuYWxfZGVmZXJfY2xlYXIi
-LCAiMSIpOwogCSAgZ3J1Yl9jbHMgKCk7CisJICBpZiAoZGVmZXJfY2xlYXIpCisJICAgIGdydWJf
-ZW52X3Vuc2V0ICgiZXZhX2ludGVybmFsX2RlZmVyX2NsZWFyIik7CiAJICBncnViX21lbnVfZXhl
-Y3V0ZV9lbnRyeSAoZSwgMCk7CiAJfQogICAgICAgaWYgKGF1dG9ib290ZWQpCi0tLSBhL2dydWIt
-Y29yZS90ZXJtL2dmeHRlcm0uYworKysgYi9ncnViLWNvcmUvdGVybS9nZnh0ZXJtLmMKQEAgLTEx
-Nyw2ICsxMTcsOSBAQAogc3RhdGljIGludCByZXBhaW50X3NjaGVkdWxlZCA9IDA7CiBzdGF0aWMg
-aW50IHJlcGFpbnRfd2FzX3NjaGVkdWxlZCA9IDA7CiAKKy8qIEtlZXAgYSBzaWxlbnQgYm9vdCdz
-IGNsZWFyIG9wZXJhdGlvbiBvZmYtc2NyZWVuIHVudGlsIG91dHB1dCBpcyBuZWVkZWQuICAqLwor
-c3RhdGljIGludCBkZWZlcnJlZF9ib290X2NsZWFyID0gMDsKKwogc3RhdGljIHZvaWQgZGVzdHJv
-eV93aW5kb3cgKHZvaWQpOwogCiBzdGF0aWMgc3RydWN0IGdydWJfdmlkZW9fcmVuZGVyX3Rhcmdl
-dCAqdGV4dF9sYXllcjsKQEAgLTQwOCw2ICs0MTEsNyBAQAogc3RhdGljIHZvaWQKIGRlc3Ryb3lf
-d2luZG93ICh2b2lkKQogeworICBkZWZlcnJlZF9ib290X2NsZWFyID0gMDsKICAgZ3J1Yl92aXJ0
-dWFsX3NjcmVlbl9mcmVlICgpOwogfQogCkBAIC04NDYsNiArODUwLDEyIEBACiAgICAgLyogRklY
-TUUgKi8KICAgICByZXR1cm47CiAKKyAgaWYgKGRlZmVycmVkX2Jvb3RfY2xlYXIpCisgICAgewor
-ICAgICAgZGVmZXJyZWRfYm9vdF9jbGVhciA9IDA7CisgICAgICBncnViX2dmeHRlcm1fcmVmcmVz
-aCAodGVybSk7CisgICAgfQorCiAgIC8qIEVyYXNlIGN1cnJlbnQgY3Vyc29yLCBpZiBhbnkuICAq
-LwogICBpZiAodmlydHVhbF9zY3JlZW4uY3Vyc29yX3N0YXRlKQogICAgIGRyYXdfY3Vyc29yICgw
-KTsKQEAgLTEwMzYsNiArMTA0Niw5IEBACiBncnViX2dmeHRlcm1fY2xzIChzdHJ1Y3QgZ3J1Yl90
-ZXJtX291dHB1dCAqdGVybSkKIHsKICAgZ3J1Yl92aWRlb19jb2xvcl90IGNvbG9yOworICBjb25z
-dCBjaGFyICpkZWZlciA9IGdydWJfZW52X2dldCAoImV2YV9pbnRlcm5hbF9kZWZlcl9jbGVhciIp
-OworCisgIGRlZmVycmVkX2Jvb3RfY2xlYXIgPSBkZWZlciAmJiBncnViX3N0cmNtcCAoZGVmZXIs
-ICIxIikgPT0gMDsKIAogICAvKiBDbGVhciB2aXJ0dWFsIHNjcmVlbi4gICovCiAgIGdydWJfdmly
-dHVhbF9zY3JlZW5fY2xzICh0ZXJtKTsKQEAgLTEwODMsNiArMTA5NiwxMiBAQAogZ3J1Yl9nZnh0
-ZXJtX3NldGN1cnNvciAoc3RydWN0IGdydWJfdGVybV9vdXRwdXQgKnRlcm0gX19hdHRyaWJ1dGVf
-XyAoKHVudXNlZCkpLAogCQkJaW50IG9uKQogeworICBpZiAob24gJiYgZGVmZXJyZWRfYm9vdF9j
-bGVhcikKKyAgICB7CisgICAgICBkZWZlcnJlZF9ib290X2NsZWFyID0gMDsKKyAgICAgIGdydWJf
-Z2Z4dGVybV9yZWZyZXNoICh0ZXJtKTsKKyAgICB9CisKICAgaWYgKHZpcnR1YWxfc2NyZWVuLmN1
-cnNvcl9zdGF0ZSAhPSBvbikKICAgICB7CiAgICAgICBpZiAodmlydHVhbF9zY3JlZW4uY3Vyc29y
-X3N0YXRlKQpAQCAtMTA5Nyw2ICsxMTE2LDkgQEAKIHN0YXRpYyB2b2lkCiBncnViX2dmeHRlcm1f
-cmVmcmVzaCAoc3RydWN0IGdydWJfdGVybV9vdXRwdXQgKnRlcm0gX19hdHRyaWJ1dGVfXyAoKHVu
-dXNlZCkpKQogeworICBpZiAoZGVmZXJyZWRfYm9vdF9jbGVhcikKKyAgICByZXR1cm47CisKICAg
-cmVhbF9zY3JvbGwgKCk7CiAKICAgLyogUmVkcmF3IG9ubHkgY2hhbmdlZCByZWdpb25zLiAgKi8K
-EVANGELION_GRUB_214_PATCH_BASE64
-}
-
 plan_manager() {
     local removing=${1:-0} relative path theme profile base count=0 hashes
     local -A manager_files=()
     load_manager
     if ((!removing)); then
-        for relative in bin/install.sh bin/eva LICENSE docs/NOTICE.md docs/ADVANCED.md docs/GRUB_PATCH.md docs/licenses/grub/COPYING docs/licenses/{space-mono,jetbrains-mono,six-caps,intel-one-mono,inter}/OFL.txt; do
+        for relative in bin/install.sh bin/eva bin/boot-console bin/grub-generator LICENSE docs/NOTICE.md docs/ADVANCED.md docs/BOOT_CONSOLE.md; do
             path=$(safe_path "$EVA_REPO" "$relative")
             [[ -f $path ]] || die "Missing package file: $relative"
             manager_files["$LIBRARY/$relative"]=$path
         done
-        emit_grub_patch > "$WORK/grub-2.14-deferred-terminal.patch"
-        manager_files["$LIBRARY/patches/grub-2.14-deferred-terminal.patch"]=$WORK/grub-2.14-deferred-terminal.patch
+        while IFS= read -r -d '' path; do
+            relative=${path#"$EVA_REPO/"}
+            safe_path "$EVA_REPO" "$relative" >/dev/null
+            manager_files["$LIBRARY/$relative"]=$path
+        done < <(find "$EVA_REPO/docs/licenses" -type f -print0)
         manager_files["$COMMAND"]=${manager_files[$LIBRARY/bin/eva]}
+        [[ -f $SOURCE/catalog.json ]] || die 'Missing theme catalog'
+        manager_files["$LIBRARY/themes/catalog.json"]=$SOURCE/catalog.json
         for theme in "${THEMES[@]}"; do for profile in "${PROFILES[@]}"; do
             base=$(safe_path "$SOURCE" "$theme/$profile")
             path=$(safe_path "$base" runtime-ready.json)
@@ -390,9 +367,10 @@ find_grub_command() {
 }
 
 strip_block() {
-    jq -Rjs --arg begin "$BEGIN" --arg legacy "$LEGACY_BEGIN" --arg end "$END" --argjson state "$STATE_DATA" '
-        (indices($begin+"\n")|length) + (indices($legacy+"\n")|length) as $starts |
-        (indices($end+"\n")|length) as $ends |
+    # jq 1.6 reserves $end, and jq 1.6/1.7 bind `as` before addition.
+    jq -Rjs --arg begin "$BEGIN" --arg legacy "$LEGACY_BEGIN" --arg end_marker "$END" --argjson state "$STATE_DATA" '
+        ((indices($begin+"\n")|length) + (indices($legacy+"\n")|length)) as $starts |
+        (indices($end_marker+"\n")|length) as $ends |
         if $state == null then
             if $starts != 0 or $ends != 0 then error("Managed block exists without an ownership manifest") else . end
         else
@@ -430,9 +408,6 @@ HEADER
 if terminal_output gfxterm; then
   set theme="$prefix/themes/evangelion/theme.txt"
   export theme
-  # Supported by the bundled GRUB patch; stock GRUB ignores this setting.
-  set eva_defer_boot_terminal=1
-  export eva_defer_boot_terminal
 else
   unset theme
   terminal_output console
@@ -441,10 +416,10 @@ FOOTER
 }
 
 plan_changes() {
-    local path relative expected old_files old_previous old_snapshot hashes previous newline mode
+    local path relative expected old_files old_previous old_snapshot hashes previous newline mode boot_hashes
     # owned_changes reads these arrays through namerefs.
     # shellcheck disable=SC2034
-    local -A snapshot=() empty=()
+    local -A snapshot=() empty=() boot_files=()
     if [[ $ACTION == setup ]]; then plan_manager; return; fi
     load_state
     if [[ $ACTION == uninstall ]]; then
@@ -469,8 +444,14 @@ plan_changes() {
         plan_add "$HOOK"; plan_add "$STATE"
         owned_changes "$old_files" empty 1
         owned_changes "$old_snapshot" empty 1
+        owned_changes "$(jq -c '.boot_files // {}' <<< "$STATE_DATA")" empty 1
         return
     fi
+    need python3
+    boot_files["$BOOT_HELPER"]=$EVA_REPO/bin/boot-console
+    boot_files["$BOOT_PROXY"]=$EVA_REPO/bin/grub-generator
+    owned_changes "$(jq -c '.boot_files // {}' <<< "$STATE_DATA")" boot_files 0
+    boot_hashes=$(hash_map boot_files)
     if [[ $ACTION == rollback ]]; then
         [[ $old_previous != null ]] || die 'No previous Evangelion choice is saved; use uninstall to restore the pre-Evangelion appearance'
         THEME=$(jq -r .theme <<< "$old_previous"); PROFILE=$(jq -r .profile <<< "$old_previous"); mode=$(jq -r .gfxmode <<< "$old_previous")
@@ -498,15 +479,21 @@ plan_changes() {
         owned_changes "$old_snapshot" snapshot 0
         previous=$(jq -c '{theme,profile,gfxmode,files}' <<< "$STATE_DATA")
     fi
-    printf '%s\n' "$BEGIN" '# The late loader selects the theme only after the exact mode succeeds.' 'GRUB_THEME=""' 'GRUB_FONT=""' "GRUB_GFXMODE=\"$mode\"" 'GRUB_TIMEOUT_STYLE="menu"' "$END" > "$WORK/block"
+    {
+        printf '%s\n' "$BEGIN" '# The late loader selects the theme only after the exact mode succeeds.' 'GRUB_THEME=""' 'GRUB_FONT=""' "GRUB_GFXMODE=\"$mode\"" 'GRUB_TIMEOUT_STYLE="menu"'
+        printf '%s\n' '# Process the current GRUB generators on every configuration refresh.' 'if [ -n "${grub_mkconfig_dir-}" ]; then' '  export EVANGELION_GRUB_SOURCE_DIR="$grub_mkconfig_dir"'
+        printf '  grub_mkconfig_dir=%s\n' "$(shell_quote "${ROOT%/}/$BOOT_RUNTIME/grub.d")"
+        printf '%s\n' 'fi' "$END"
+    } > "$WORK/block"
     newline=$(jq -Rs 'length > 0 and (endswith("\n")|not)' "$WORK/base-defaults")
     cat -- "$WORK/base-defaults" > "$WORK/defaults"
     if [[ $newline == true ]]; then printf '\n' >> "$WORK/defaults"; fi
     cat -- "$WORK/block" >> "$WORK/defaults"
     make_hook "$mode" > "$WORK/hook"
-    jq -Sn --arg theme "$THEME" --arg profile "$PROFILE" --arg mode "$mode" --rawfile block "$WORK/block" --rawfile base "$WORK/base-defaults" --argjson newline "$newline" --argjson previous "$previous" --argjson files "$hashes" --arg hook_hash "$(sha "$WORK/hook")" --argjson old "$STATE_DATA" '{
-        version: 2, theme: $theme, profile: $profile, gfxmode: $mode, block: $block, added_newline: $newline,
+    jq -Sn --arg theme "$THEME" --arg profile "$PROFILE" --arg mode "$mode" --rawfile block "$WORK/block" --rawfile base "$WORK/base-defaults" --argjson newline "$newline" --argjson previous "$previous" --argjson files "$hashes" --argjson boot_files "$boot_hashes" --arg hook_hash "$(sha "$WORK/hook")" --argjson old "$STATE_DATA" '{
+        version: 3, theme: $theme, profile: $profile, gfxmode: $mode, block: $block, added_newline: $newline,
         previous: $previous, files: $files, hook_hash: $hook_hash,
+        boot_files: $boot_files,
         prior_setting_lines: (if $old != null then $old.prior_setting_lines else [$base|scan("(?m)^\\s*(?:GRUB_THEME|GRUB_FONT|GRUB_GFXMODE|GRUB_TIMEOUT_STYLE)\\s*=.*$")] end)
     }' > "$WORK/state.json"
     plan_add "$DEFAULTS" "$WORK/defaults"; plan_add "$HOOK" "$WORK/hook"; plan_add "$STATE" "$WORK/state.json"
@@ -614,7 +601,7 @@ remove_empty_owned_dirs() {
     local -A directories=()
     for relative in "${!PLAN[@]}"; do
         [[ -z ${PLAN[$relative]} ]] || continue
-        for prefix in "$RUNTIME" "$PREVIOUS" "$LIBRARY"; do
+        for prefix in "$RUNTIME" "$PREVIOUS" "$LIBRARY" "$BOOT_RUNTIME"; do
             [[ $relative == "$prefix/"* ]] || continue
             parent=${relative%/*}
             while [[ $parent == "$prefix" || $parent == "$prefix/"* ]]; do directories["$parent"]=1; parent=${parent%/*}; done
@@ -641,6 +628,9 @@ apply_changes() {
         else
             [[ -z $GENERATOR ]] || die '--generator is available only with a staging --root'
             generator=("$(find_grub_command mkconfig)" -o)
+            grep -q '^grub_mkconfig_dir=' "${generator[0]}" &&
+                grep -q 'for .*grub_mkconfig_dir' "${generator[0]}" ||
+                die 'This grub-mkconfig does not expose the supported generator directory'
         fi
         # Test the boot destination before changing defaults or runtime files.
         CANDIDATE=$(mktemp "${ROOT%/}/$GRUB_DIR/.grub.cfg.evangelion-XXXXXX")
@@ -649,11 +639,16 @@ apply_changes() {
     for relative in "${!PLAN[@]}"; do
         [[ $relative != "$STATE" && $relative != "$MANAGER" ]] || continue
         mode=
-        case $relative in "$HOOK"|"$COMMAND"|"$LIBRARY/bin/eva"|"$LIBRARY/bin/install.sh") mode=755;; "$PREVIOUS/"*) mode=600;; esac
+        case $relative in "$HOOK"|"$COMMAND"|"$LIBRARY/bin/eva"|"$LIBRARY/bin/install.sh"|"$BOOT_PROXY") mode=755;; "$PREVIOUS/"*) mode=600;; esac
         transaction_change "$relative" "${PLAN[$relative]}" "$mode"
     done
     if ((regenerate)); then
         "${generator[@]}" "$CANDIDATE" || die "GRUB configuration generation failed"
+        if [[ $ACTION != uninstall ]]; then
+            # Staging generators need the same transformation as the live proxy.
+            python3 "$ROOT/$BOOT_HELPER" filter "$CANDIDATE" --root "$ROOT" > "$WORK/console-config" || die 'Console handoff generation failed'
+            cat -- "$WORK/console-config" > "$CANDIDATE"
+        fi
         "$checker" "$CANDIDATE" || die "Generated GRUB configuration failed its syntax check"
         if [[ ! -s $CANDIDATE ]] || ! grep -q '[^[:space:]]' "$CANDIDATE"; then die 'Configuration generator produced an empty file'; fi
         if [[ $ACTION == uninstall ]]; then
@@ -683,6 +678,7 @@ init_workspace() {
     ROOT=$(realpath -e -- "$ROOT")
     [[ -d $ROOT ]] || die '--root must be an existing directory'
     SOURCE=$(realpath -m -- "$SOURCE")
+    load_catalog
     WORK=$(mktemp -d "${TMPDIR:-/tmp}/eva-XXXXXXXX")
     trap cleanup EXIT
     mkdir -- "$WORK/new" "$WORK/old"

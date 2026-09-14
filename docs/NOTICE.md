@@ -2,8 +2,6 @@
 
 The project's Apache-2.0 license is included in [LICENSE](../LICENSE).
 
-The optional GRUB 2.14 source patch is embedded as a separate payload in [the installer](../bin/install.sh) and is distributed under GPL-3.0-or-later. See the [export instructions](GRUB_PATCH.md) and [GPL license text](licenses/grub/COPYING). GRUB's copyright and license notices remain in the upstream source files. The installer code remains under Apache-2.0.
-
 The EVA-01, Wunder, EVA-02 and Ramiel artwork and wallpapers were supplied for this project. The GRUB backgrounds, selection indicators and countdown graphics are derived from that artwork.
 
 ## Fonts

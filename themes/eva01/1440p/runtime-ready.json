@@ -12,7 +12,7 @@
     "timer": "Evangelion eva01-1440p-timer Regular 32"
   },
   "sha256": {
-    "README.md": "f7fc2d0049bcb63f49a70f616fd72853fa602bf71dbf7aa920a72d28ef8db418",
+    "README.md": "1430baacd025111b1c54e6fb0b7b7481fbe759f7ba994a63194e056f3500257d",
     "background.png": "89807f2a08caac1c42072e8f9b3c97aa1fbdc3c934fc9d7d0fc160369fcde828",
     "fonts/eva01-1440p-menu.pf2": "a0c72fe3678741825c98d9be212865cf5a5cbf19043f4dbe7af650fc769d9ec2",
     "fonts/eva01-1440p-timer.pf2": "b294dcdd8257f06025d8e066f55ec43e9b8e644273425b6b440060d2c1d46e5e",
@@ -29,6 +29,6 @@
     "selectors/selected_e.png": "9ec480995023eccdb6e1d63e4a4363ad3f772b01ac5f7bded13e92b073581a57",
     "selectors/selected_w.png": "8df90d7ddfb1c37c05c4678220620734a2d1b65e836fac9dd3b1789d2b7683bf",
     "selectors/thumb_c.png": "f5e345348e2511ee5dd852999d6efe808a944450a587843267f969e0422a3e63",
-    "theme.txt": "c9e67dc74e449bd6146fd120e31ca72f1f8e49e0acccd74175539ae31d0c1921"
+    "theme.txt": "4f4958a49a4c9696a03babd49144023a2face9795a6196a9af2f0d8b40870e10"
   }
 }

@@ -2,6 +2,13 @@
 title-text: ""
 desktop-color: "#F2EEE7"
 
+terminal-font: "Evangelion terminal Regular 16"
+terminal-left: "0"
+terminal-top: "0"
+terminal-width: "100%"
+terminal-height: "100%"
+terminal-border: "0"
+
 + boot_menu {
   id = "__menu__"
   left = 50%-1165
