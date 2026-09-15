@@ -113,13 +113,13 @@ guided() {
     local theme default current
     for theme in "${THEMES[@]}"; do [[ ! -v CATALOG[$theme] ]] || themes+=("$theme"); done
     load_state
-    current=$(jq -r '.theme // empty' <<< "$STATE_DATA"); default=${themes[0]}
+    current=$(record get theme <<< "$STATE_DATA"); default=${themes[0]}
     [[ -z $current || ! -v CATALOG[$current] ]] || default=$current
     printf 'Evangelion theme chooser\n'
     prompt_choice Theme "$default" themes
     THEME=$CHOICE
     read -r -a profiles <<< "${CATALOG[$THEME]}"
-    default=${profiles[${#profiles[@]}-1]}; current=$(jq -r '.profile // empty' <<< "$STATE_DATA")
+    default=${profiles[${#profiles[@]}-1]}; current=$(record get profile <<< "$STATE_DATA")
     for theme in "${profiles[@]}"; do [[ $theme != "$current" ]] || default=$current; done
     prompt_choice 'Display profile' "$default" profiles
     PROFILE=$CHOICE
@@ -131,12 +131,12 @@ status() {
     path=$(safe_path "$ROOT" "$MANAGER")
     if [[ -f $path ]]; then printf 'Theme manager: installed\n'; else printf 'Theme manager: running from checkout\n'; fi
     if [[ $STATE_DATA == null ]]; then printf 'No Evangelion theme is currently configured.\n'; return; fi
-    printf 'Configured theme: %s\n' "$(theme_name "$(jq -r .theme <<< "$STATE_DATA")")"
-    printf 'Display profile: %s\n' "$(jq -r .profile <<< "$STATE_DATA")"
-    printf 'Requested graphics mode: %s\n' "$(jq -r .gfxmode <<< "$STATE_DATA")"
-    previous=$(jq -c .previous <<< "$STATE_DATA")
+    printf 'Configured theme: %s\n' "$(theme_name "$(record get theme <<< "$STATE_DATA")")"
+    printf 'Display profile: %s\n' "$(record get profile <<< "$STATE_DATA")"
+    printf 'Requested graphics mode: %s\n' "$(record get gfxmode <<< "$STATE_DATA")"
+    previous=$(record get previous null <<< "$STATE_DATA")
     if [[ $previous == null ]]; then printf 'Previous choice: none; uninstall restores the prior GRUB appearance.\n'; else
-        printf 'Previous choice: %s, %s, %s\n' "$(theme_name "$(jq -r .theme <<< "$previous")")" "$(jq -r .profile <<< "$previous")" "$(jq -r .gfxmode <<< "$previous")"
+        printf 'Previous choice: %s, %s, %s\n' "$(theme_name "$(record get theme <<< "$previous")")" "$(record get profile <<< "$previous")" "$(record get gfxmode <<< "$previous")"
     fi
 }
 
@@ -206,7 +206,7 @@ eva_main() {
     THEME=$(normalize_theme "$THEME"); PROFILE=$(normalize_profile "$PROFILE")
     load_state
     # Keep explicit padding when only the theme changes, as in the prior chooser.
-    if ((!backend)) && [[ -z $MODE && $(jq -r '.profile // empty' <<< "$STATE_DATA") == "$PROFILE" ]]; then MODE=$(jq -r .gfxmode <<< "$STATE_DATA"); fi
+    if ((!backend)) && [[ -z $MODE && $(record get profile <<< "$STATE_DATA") == "$PROFILE" ]]; then MODE=$(record get gfxmode <<< "$STATE_DATA"); fi
     ACTION=install
     if [[ $command == install ]] && ((!backend)); then DEPLOY=1; fi
     run_operation

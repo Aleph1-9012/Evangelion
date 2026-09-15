@@ -1,6 +1,6 @@
 # Installation and restoration
 
-The themes use GRUB 2's graphical theme format. The Linux installer requires Bash, jq, Python 3.9 or newer and an existing GRUB installation with `/etc/default/grub` and `/etc/grub.d/00_header`. It detects `/boot/grub/grub.cfg` or `/boot/grub2/grub.cfg`, and accepts either `grub-mkconfig` / `grub-script-check` or `grub2-mkconfig` / `grub2-script-check`. It does not install GRUB, change firmware entries, install wallpapers, or reboot. It changes Linux display arguments in generated entries to show live boot messages, as described in [boot behaviour](BOOT_CONSOLE.md).
+The themes use GRUB 2's graphical theme format. The Linux installer requires Bash, awk, coreutils, find, grep, diff, flock and an existing GRUB installation with `/etc/default/grub` and `/etc/grub.d/00_header`. Python and jq are not required. It detects `/boot/grub/grub.cfg` or `/boot/grub2/grub.cfg`, and accepts either `grub-mkconfig` / `grub-script-check` or `grub2-mkconfig` / `grub2-script-check`. It does not install GRUB, change firmware entries, install wallpapers, or reboot. It changes Linux display arguments in generated entries to show live boot messages, as described in [boot behaviour](BOOT_CONSOLE.md).
 
 The installer preserves your existing timeout, default boot entry and menu-generation scripts.
 
@@ -28,6 +28,7 @@ sudo eva set wunder 1080p
 sudo eva set eva02 1080p
 sudo eva set ramiel 1080p
 sudo eva set ayanami 1080p
+sudo eva set soryu 1080p
 sudo eva set penpen 1080p
 sudo eva set seele 1440p
 sudo eva set eva01 1440p --gfxmode 2560x1600
@@ -48,7 +49,9 @@ sudo eva set wunder 1440p --dry-run
 
 Only profiles listed in `themes/catalog.json` with a matching `runtime-ready.json` record, PNG artwork, `theme.txt` and `fonts/*.pf2` can be installed. The installer checks the recorded canvas dimensions and every asset's SHA256, requires every referenced image and styled-box center slice, and matches theme font names against the names embedded in the packaged PF2 files. Changed, missing or unrecorded assets require a rebuild.
 
-The installer and chooser use Bash with `jq` to read the asset and ownership records. Python processes generated boot entries as data. To refresh the installed command and theme catalog, run `sudo ./install.sh --no-apply` from the updated folder. This preserves the current choice, rollback snapshot and original GRUB settings.
+The installer and chooser use Bash and awk to read the JSON asset and ownership records. The boot helper also uses Bash and awk to process generated entries as data. Existing installation records remain compatible. To refresh only the installed command and theme catalog, run `sudo ./install.sh --no-apply` from the updated folder. This preserves the current choice, rollback snapshot and original GRUB settings.
+
+When upgrading from the older Python-based installer, run `sudo ./install.sh` and select your current theme and profile. That also replaces the installed boot helper while retaining the saved rollback choice. A catalog-only update leaves the active boot helper in place until a theme is applied.
 
 The three design sizes are `720p`, `1080p` and `1440p`. Graphics mode and design size are separate. A larger mode keeps the design at its native dimensions, centered with padding. For example, `1440p --gfxmode 3840x2160` uses the 2560×1440 design on a 3840×2160 framebuffer. There is no separately scaled 4K design. The installer rejects a mode smaller than the selected design.
 
@@ -75,6 +78,29 @@ sudo eva set wunder 1440p
 
 Selecting the same theme, profile and mode again makes no changes when the owned files and state already match. It also preserves the previous choice for rollback. No duplicate settings or extra backup generations accumulate.
 
+## Horizontal card compatibility
+
+Soryu uses four horizontal cards with wrapped titles and live entry numbers.
+Up and Down move selection; Enter opens a submenu or boots an entry. Menus
+with more than four entries scroll, and numbers follow the real entries.
+Very long titles end with an ellipsis when all available lines are full.
+The AUTO BOOT caption, seconds and unit disappear together when the timeout
+is cancelled. Empty card positions contain no entry number or text.
+
+The installer loads a packaged `evangelion_cards.mod` for x86-64 UEFI or
+32-bit PC BIOS. Soryu has VM coverage on GRUB 2.12 and 2.14 with x86-64
+UEFI, and GRUB 2.14 with PC BIOS. Other GRUB versions have not been validated. No compiler, Python or jq is required. The module uses the
+existing GRUB menu model and does not replace the installed GRUB executable.
+Other architectures, including 32-bit UEFI, use the console menu. A missing
+or rejected card module also returns to the console menu with the original
+entries available. Secure Boot configurations that reject unsigned GRUB
+modules cannot display the horizontal cards; the installer does not change
+Secure Boot or sign boot components.
+
+The module and its complete corresponding source are covered by the
+[GNU GPL](NOTICE.md#native-card-menu). The remaining themes use standard
+GRUB theme components.
+
 ## Exact changes
 
 The dry run prints the complete proposed loader, a unified diff of `/etc/default/grub`, and the size and SHA256 of every runtime file to copy. It performs no writes and does not run configuration generation.
@@ -98,7 +124,7 @@ fi
 
 Prior assignments remain in place. The last managed assignments suppress early theme loading and request the visible menu; `/etc/grub.d/99_evangelion` then selects the theme after the exact mode initializes. The hook loads the existing `$prefix/fonts/unicode.pf2` terminal font and all packaged PF2 fonts. Keep the distro's Unicode font installed for console and editor readability.
 
-The shared console generator adds the handoff to generated boot entries during installation and later `grub-mkconfig` runs. It calls the original scripts in order and preserves their files. All themes inherit this behaviour through the installer. No patched GRUB binaries or modules are required.
+The shared console generator adds the handoff to generated boot entries during installation and later `grub-mkconfig` runs. It calls the original scripts in order and preserves their files. All themes inherit this behaviour through the installer. The console handoff does not require patched GRUB binaries or modules. Soryu separately includes a native module for its horizontal card menu.
 
 The installer owns these locations:
 
@@ -107,7 +133,7 @@ The installer owns these locations:
 | `/boot/grub/themes/evangelion/` | One active runtime profile; the manifest tracks individual files |
 | `/etc/grub.d/99_evangelion` | Generated executable shell hook emitting the GRUB loader |
 | One marked block in `/etc/default/grub` | Theme settings, removable without restoring the entire file |
-| `/var/lib/evangelion-grub/boot/` | Shared console generator and Python helper, used on every menu refresh |
+| `/var/lib/evangelion-grub/boot/` | Shared console generator and Bash/awk helper, used on every menu refresh |
 | `/var/lib/evangelion-grub/state.json` | Current choice, original relevant setting lines and owned-file hashes |
 | `/var/lib/evangelion-grub/grub.cfg.previous` | Exactly one previous generated configuration, retained for recovery |
 | `/var/lib/evangelion-grub/previous/` | One previous runtime snapshot for theme rollback |
@@ -168,4 +194,4 @@ Their countdown digits show the actual GRUB timeout. Ayanami's crosses and Pen-P
 
 The empty terminal box was reproduced in stock GRUB 2.14 before any kernel ran, with EVA-01 and all four Marathon themes. The current fix switches to full-screen console output and shows real Linux boot messages. The earlier approach kept the theme frozen while the kernel loaded and has been retired.
 
-The current installer and console handoff were confirmed after a physical reboot on the Arch/Omarchy machine using Wunder's 1440p profile at 2560×1600 and its original Linux EFI image. Boot messages appeared as intended. The handoff adds no boot delay, but it does not remove time spent loading the kernel, initramfs or graphics drivers. The menu timeout still applies before an entry is selected.
+The console handoff was confirmed after a physical reboot on the Arch/Omarchy machine using Wunder's 1440p profile at 2560×1600 and its original Linux EFI image. Boot messages appeared as intended. That test used the earlier helper. The Bash/awk replacement has VM and staged installation coverage; a physical reboot with that replacement is still pending. The handoff adds no boot delay, but it does not remove time spent loading the kernel, initramfs or graphics drivers. The menu timeout still applies before an entry is selected.

@@ -1,0 +1,50 @@
+{
+  "theme": "soryu",
+  "profile": "720p",
+  "canvas": [
+    1280,
+    720
+  ],
+  "ready": true,
+  "readiness": "runtime-tested",
+  "fonts": {
+    "menu": "Evangelion soryu-720p-menu Regular 25",
+    "selected": "Evangelion soryu-720p-selected Regular 36",
+    "index": "Evangelion soryu-720p-index Regular 29",
+    "timer": "Evangelion soryu-720p-timer Regular 59"
+  },
+  "menu_type": "horizontal_cards",
+  "sha256": {
+    "README.md": "ed0ca02d737be5679c3151b4452ae4030ba018a88895a6cebd9b64218082a6e5",
+    "background.png": "dcedbe85d27184de93fd1298974791439d5259d90c8fe4b594396571eceeba2d",
+    "cards.cfg": "d12a53c867adcfa67ed3c18881a14d4faeaf5d35e1b3a2b2964f501672f9ad51",
+    "desktop.png": "5475d0390d2438ff7433e92da41d0301b67bb26332b933c9b2ad59b8eb16b0d5",
+    "fonts/soryu-720p-index.pf2": "a58697d57674e6e7e6f458e9dc02207e5aaea208538a0e6b54735e7de292e416",
+    "fonts/soryu-720p-menu.pf2": "b0dc3a3bd89fe94b96f17c1968ab0c22ae9168d1548bad25a13baaf893e8e8c9",
+    "fonts/soryu-720p-selected.pf2": "e53bfb6097ff371020b41e97523c2f3ca8970e46aa0f27ef6da63e8504001990",
+    "fonts/soryu-720p-timer.pf2": "58dedc2b82cb957aeffbdd4e91cd9cab2cf376b22bdb7a8daf73af3c6e378294",
+    "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
+    "modules/i386-pc/evangelion_cards.mod": "cb0729021a002b4c8e3f01f24f41655ca0fd4d305c0d66e0856f6da0adf2f74e",
+    "modules/x86_64-efi/evangelion_cards.mod": "cf9a1a8e897507165b3c2f73fdd04ad2fea0343544520c969323237effc7143c",
+    "progress/timer-caption.png": "17b3ca8727840a974e636bc7f9d6db4b490c8b5ef2634b1c92e8a0a304fd8b75",
+    "progress/transparent.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
+    "theme.txt": "f0f6d55bf1403a9c34cc4167c08c62ae051aae24c92472ed10aafe024f7e8e68"
+  },
+  "verification": {
+    "date": "2026-09-15",
+    "environment": "QEMU TCG, OVMF x86-64 UEFI, stock GRUB 2.14; additional GRUB 2.12 UEFI and GRUB 2.14 BIOS coverage",
+    "scenarios": [
+      "auto",
+      "fallback",
+      "manual",
+      "navigate",
+      "three",
+      "zero"
+    ],
+    "graphics_modes": [
+      "1280x720",
+      "9999x9999"
+    ],
+    "boot_handoff": "Shared installer and console helper; visible Linux boot messages; no added delay."
+  }
+}

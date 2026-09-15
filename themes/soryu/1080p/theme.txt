@@ -1,0 +1,54 @@
+# Fixed 1920x1080 canvas; centered padding on larger modes.
+title-text: ""
+desktop-color: "#142B4B"
+
+terminal-font: "Evangelion terminal Regular 16"
+terminal-left: "0"
+terminal-top: "0"
+terminal-width: "100%"
+terminal-height: "100%"
+terminal-border: "0"
+
+desktop-image: "desktop.png"
+desktop-image-scale-method: "stretch"
+
++ canvas {
+  id = "evangelion-cards"
+  left = 0
+  top = 0
+  width = 100%
+  height = 100%
+}
+
++ label {
+  id = "__timeout__"
+  left = 50%+822
+  top = 50%-504
+  width = 112
+  height = 92
+  text = "%02d"
+  font = "Evangelion soryu-1080p-timer Regular 88"
+  color = "#142B4B"
+  align = "left"
+}
+
++ circular_progress {
+  id = "__timeout__"
+  left = 50%+811
+  top = 50%-535
+  width = 149
+  height = 155
+  visible = false
+  num_ticks = 0
+  center_bitmap = "progress/timer-caption.png"
+  tick_bitmap = "progress/transparent.png"
+}
+
++ image {
+  left = 50%-960
+  top = 50%-540
+  width = 1920
+  height = 1080
+  file = "background.png"
+}
+

@@ -2,7 +2,7 @@
 
 Every installation uses a graphical theme for choosing an OS, then switches to a full-screen console when an entry starts. GRUB displays the selected entry name. Linux entries show kernel, initramfs and system startup messages as the OS produces them. There is no added sleep, animation or progress simulation.
 
-All seven themes use the same installer and boot helper. New themes listed in `themes/catalog.json` inherit the handoff. The theme files give GRUB's terminal the full screen, which also prevents the small empty rectangle during stock GRUB's initial clear.
+All eight themes use the same installer and boot helper. New themes listed in `themes/catalog.json` inherit the handoff. The theme files give GRUB's terminal the full screen, which also prevents the small empty rectangle during stock GRUB's initial clear.
 
 ## Adding future themes
 
@@ -31,7 +31,7 @@ For a locally resolvable unified kernel image, or UKI, the helper reads its PE `
 
 ## Compatibility
 
-Requires GNU GRUB with the standard `grub-mkconfig` generator directory, Bash, jq and Python 3.9 or newer. The tested host uses Arch Linux, GRUB 2.14 and a UKI with Secure Boot disabled. Both `/boot/grub` and `/boot/grub2` installation layouts have staged coverage.
+Requires GNU GRUB with the standard `grub-mkconfig` generator directory, Bash, awk and standard Linux command-line tools. Python and jq are not required. The console behaviour was tested on an Arch Linux host with GRUB 2.14 and a UKI with Secure Boot disabled. The Bash/awk replacement has separate VM and staged installation coverage; a physical reboot with that replacement is still pending. Both `/boot/grub` and `/boot/grub2` installation layouts have staged coverage.
 
 With Secure Boot enabled or unreadable, the helper keeps a UKI's arguments unchanged. The console handoff still happens, but an image with embedded `quiet` or splash settings may hide Linux messages. The installer does not disable Secure Boot or rebuild or sign images. See [systemd-stub](https://man.archlinux.org/man/systemd-stub.7.en) for EFI command-line rules.
 

@@ -1,390 +1,100 @@
-#!/usr/bin/env python3
+#!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
-"""Add visible console handoff to generated GRUB entries without executing their text."""
-from __future__ import annotations
+# Process generated GRUB entries using Bash, awk and core utilities.
+set -Eeuo pipefail
+ORIGINAL_LC_ALL=${LC_ALL-} ORIGINAL_LC_ALL_SET=${LC_ALL+x}
+export LC_ALL=C
+HERE=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+die() { printf 'eva: Console menu generation failed: %s\n' "$*" >&2; exit 1; }
 
-import argparse
-from dataclasses import dataclass
-import os
-from pathlib import Path
-import re
-import struct
-import subprocess
-import sys
-
-MARKER = '# Evangelion console handoff v1'
-DISPLAY_KEYS = {
-    'quiet', 'splash', 'rhgb', 'loglevel', 'systemd.show_status',
-    'rd.systemd.show_status', 'rd.udev.log_level', 'udev.log_level',
-    'vt.global_cursor_default', 'plymouth.enable', 'rd.plymouth', 'disablehooks',
+bytes() { od -An -v -tu1 -j "$2" -N "$3" -- "$1"; }
+uint() {
+    local file=$1 offset=$2 count=$3 b value=0 factor=1
+    local -a data=()
+    read -r -a data <<< "$(bytes "$file" "$offset" "$count")"
+    ((${#data[@]} == count)) || die 'Truncated PE section table.'
+    for b in "${data[@]}"; do value=$((value+b*factor)); factor=$((factor*256)); done
+    printf '%s' "$value"
 }
-VISIBLE_ARGS = [
-    'loglevel=7', 'systemd.show_status=1', 'rd.systemd.show_status=1',
-    'rd.udev.log_level=info', 'udev.log_level=info', 'vt.global_cursor_default=1',
-    'plymouth.enable=0', 'rd.plymouth=0',
-]
 
+uki_info() {
+    local root=$1 image=$2 candidate mount file='' count=0 pe sections optional offset i name size raw_size position cmdline='' linux=0 found=0 state=unknown
+    local -a secure=()
+    local -A seen=()
+    [[ $image != \(*\)* ]] || image=${image#*)}
+    [[ $image == /* && ${image,,} == *.efi ]] || return 0
+    [[ /${image#/}/ != */../* ]] || die 'A chainloaded EFI path contains a parent-directory traversal.'
+    for mount in boot boot/efi efi ''; do
+        candidate=${root%/}/${mount:+$mount/}${image#/}
+        [[ -f $candidate ]] || continue
+        candidate=$(realpath -e -- "$candidate")
+        if [[ ! -v seen[$candidate] ]]; then seen["$candidate"]=1;file=$candidate;count=$((count+1));fi
+    done
+    ((count==1)) || return 0
+    [[ $(stat -c %s -- "$file") -ge 64 ]] || return 0
+    [[ $(od -An -tx1 -N2 -- "$file" | tr -d ' \n') == 4d5a ]] || return 0
+    pe=$(uint "$file" 60 4)
+    [[ $(stat -c %s -- "$file") -ge $((pe+24)) ]] || return 0
+    [[ $(od -An -tx1 -j "$pe" -N4 -- "$file" | tr -d ' \n') == 50450000 ]] || return 0
+    sections=$(uint "$file" "$((pe+6))" 2);optional=$(uint "$file" "$((pe+20))" 2)
+    ((sections<=128)) || die 'Unexpected PE section count.'
+    offset=$((pe+24+optional))
+    [[ $(stat -c %s -- "$file") -ge $((offset+sections*40)) ]] || die 'Truncated PE section table.'
+    for ((i=0;i<sections;i++)); do
+        position=$((offset+i*40))
+        name=$(dd if="$file" bs=1 skip="$position" count=8 status=none | tr -d '\000')
+        [[ $name != .linux ]] || linux=1
+        if [[ $name == .cmdline ]]; then
+            found=1;size=$(uint "$file" "$((position+8))" 4);raw_size=$(uint "$file" "$((position+16))" 4);position=$(uint "$file" "$((position+20))" 4)
+            ((size<=1048576)) || die 'Unexpected embedded command-line size.'
+            ((size<=raw_size)) || size=$raw_size
+            cmdline=$(dd if="$file" bs=1 skip="$position" count="$size" status=none | tr -d '\000')
+        fi
+    done
+    ((linux && found)) || return 0
+    shopt -s nullglob
+    secure=("${root%/}"/sys/firmware/efi/efivars/SecureBoot-*)
+    if ((${#secure[@]}==1)) && [[ -r ${secure[0]} && $(stat -c %s -- "${secure[0]}") -ge 5 ]]; then
+        state=$(uint "${secure[0]}" 4 1)
+    fi
+    if [[ $state != 0 ]]; then printf 'blocked\n'; else printf 'override\n%s\n' "$cmdline"; fi
+}
 
-@dataclass
-class Token:
-    start: int
-    end: int
-    raw: str
-    value: str | None
-    kind: str = 'word'
+if [[ ${1:-} == uki-info ]]; then
+    (($#==3)) || die 'Invalid EFI inspection arguments.'
+    uki_info "$2" "$3"
+    exit
+fi
 
-
-def tokens(text):
-    """Keep source spans and quoting; treat variable expansion as data, not braces."""
-    result = []
-    i = 0
-    while i < len(text):
-        if text.startswith('\\\n', i):
-            i += 2
-            continue
-        if text[i] in ' \t\r':
-            i += 1
-            continue
-        if text[i] == '#':
-            end = text.find('\n', i)
-            i = len(text) if end < 0 else end
-            continue
-        start = i
-        if text[i] in '\n;{}':
-            result.append(Token(i, i + 1, text[i], text[i], text[i]))
-            i += 1
-            continue
-        value, quote, dynamic = '', None, False
-        while i < len(text):
-            ch = text[i]
-            if quote == "'":
-                if ch == "'":
-                    quote = None
-                else:
-                    value += ch
-                i += 1
-                continue
-            if ch == '\\' and i + 1 < len(text):
-                following = text[i + 1]
-                if following != '\n':
-                    value += following
-                i += 2
-                continue
-            if quote == '"' and ch == '"':
-                quote = None
-                i += 1
-                continue
-            if quote is None and ch in "'\"":
-                quote = ch
-                i += 1
-                continue
-            if ch == '$':
-                dynamic = True
-                if text.startswith('${', i):
-                    end = text.find('}', i + 2)
-                    if end < 0:
-                        raise ValueError('Unclosed GRUB variable expansion.')
-                    value += text[i:end + 1]
-                    i = end + 1
-                    continue
-            if quote is None and ch in ' \t\r\n;{}':
-                break
-            value += ch
-            i += 1
-        if quote is not None:
-            raise ValueError('Unclosed GRUB quotation.')
-        result.append(Token(start, i, text[start:i], None if dynamic else value))
-    return result
-
-
-def visible_arguments(arguments):
-    """Preserve non-display arguments, including their original GRUB expansions."""
-    kept, disabled = [], None
-    has_console = False
-    for argument in arguments:
-        value = argument.value
-        if value is None:
-            if argument.raw.lstrip('"').startswith('disablehooks='):
-                # Keep the existing expansion and append our one disabled hook.
-                disabled = argument.raw
-                if not disabled.endswith(',plymouth'):
-                    disabled += ',plymouth'
-            else:
-                kept.append(argument.raw)
-            has_console |= argument.raw.lstrip('"').startswith('console=')
-            continue
-        key = value.split('=', 1)[0]
-        if key == 'disablehooks':
-            hooks = [item for item in value.partition('=')[2].split(',') if item]
-            if 'plymouth' not in hooks:
-                hooks.append('plymouth')
-            disabled = 'disablehooks=' + quote_grub(','.join(hooks))
-        if key not in DISPLAY_KEYS:
-            kept.append(argument.raw)
-        has_console |= key == 'console'
-    if not has_console:
-        kept.append('console=tty0')
-    return kept + VISIBLE_ARGS + [disabled or "disablehooks='plymouth'"]
-
-
-def quote_grub(value):
-    return "'" + value.replace("'", "'\\''") + "'"
-
-
-def pe_sections(path):
-    """Read PE section headers and the embedded command line, never the executable."""
-    with path.open('rb') as source:
-        header = source.read(64)
-        if len(header) < 64 or header[:2] != b'MZ':
-            return {}
-        source.seek(struct.unpack_from('<I', header, 60)[0])
-        pe = source.read(24)
-        if len(pe) != 24 or pe[:4] != b'PE\0\0':
-            return {}
-        count = struct.unpack_from('<H', pe, 6)[0]
-        optional = struct.unpack_from('<H', pe, 20)[0]
-        if count > 128:
-            raise ValueError(f'Unexpected PE section count: {path}')
-        source.seek(optional, 1)
-        headers = source.read(count * 40)
-        if len(headers) != count * 40:
-            raise ValueError(f'Truncated PE section table: {path}')
-        sections = {}
-        for offset in range(0, len(headers), 40):
-            name = headers[offset:offset + 8].rstrip(b'\0').decode('ascii')
-            size, _, raw_size, position = struct.unpack_from('<IIII', headers, offset + 8)
-            sections[name] = None
-            if name == '.cmdline':
-                if size > 1024 * 1024:
-                    raise ValueError(f'Unexpected embedded command-line size: {path}')
-                source.seek(position)
-                sections[name] = source.read(min(size, raw_size)).rstrip(b'\0').decode()
-        return sections
-
-
-def secure_boot(root):
-    files = list((root / 'sys/firmware/efi/efivars').glob('SecureBoot-*'))
-    if len(files) != 1:
-        return None
-    try:
-        data = files[0].read_bytes()
-    except OSError:
-        return None
-    return data[4] != 0 if len(data) >= 5 else None
-
-
-def find_uki(path, root):
-    if path is None:
-        return None
-    path = re.sub(r'^\([^)]*\)', '', path)
-    if not path.startswith('/') or not path.lower().endswith('.efi'):
-        return None
-    if '..' in Path(path).parts:
-        raise ValueError('A chainloaded EFI path contains a parent-directory traversal.')
-    candidates = []
-    for mount in ('boot', 'boot/efi', 'efi', ''):
-        candidate = root / mount / path.lstrip('/')
-        if candidate.is_file() and candidate.resolve() not in candidates:
-            candidates.append(candidate.resolve())
-    if len(candidates) != 1:
-        return None
-    sections = pe_sections(candidates[0])
-    return sections if '.linux' in sections and '.cmdline' in sections else None
-
-
-def uki_arguments(embedded):
-    # Kernel arguments are not GRUB source. Preserve $, braces, backslashes and
-    # literal double quotes; whitespace separates words only outside quotes.
-    result, start, quoted = [], None, False
-    for i, char in enumerate(embedded + ' '):
-        if start is None:
-            if char.isspace():
-                continue
-            start = i
-        if char == '"':
-            quoted = not quoted
-        if char.isspace() and not quoted:
-            raw = embedded[start:i]
-            result.append(Token(start, i, quote_grub(raw), raw.replace('"', '')))
-            start = None
-    if quoted:
-        raise ValueError('Unclosed quotation in the embedded kernel command line.')
-    return result
-
-
-def number_entries(text):
-    """Add optional two-digit icon classes without changing entry titles or IDs.
-
-    Numbering restarts inside each submenu. Existing classes retain their order
-    after our badge class. Entries beyond the two-digit artwork range keep
-    their normal title and remain bootable without a badge.
-    """
-    stream = tokens(text)
-    changes = []
-    counters = [0]
-    blocks = []
-    pending = None
-    command_start = True
-    for i, token in enumerate(stream):
-        if token.kind == '{':
-            blocks.append(pending)
-            if pending == 'submenu':
-                counters.append(0)
-            pending = None
-            command_start = True
-            continue
-        if token.kind == '}':
-            if blocks.pop() == 'submenu':
-                counters.pop()
-            command_start = True
-            continue
-        if token.kind in ('\n', ';'):
-            command_start = True
-            continue
-        if command_start and token.value in ('if', 'elif', 'then', 'else', 'do', '!'):
-            continue
-        if command_start and token.value in ('menuentry', 'submenu'):
-            pending = token.value
-            counters[-1] += 1
-            end = i + 1
-            while end < len(stream) and stream[end].kind == 'word':
-                end += 1
-            # Refresh only classes owned by this feature, making repeated
-            # filtering and inserting earlier entries deterministic.
-            badge = f'--class evangelion-index-{counters[-1]:02d}' if counters[-1] <= 99 else ''
-            found_badge = False
-            j = i + 1
-            while j < end:
-                option = stream[j]
-                if option.value == '--class' and j + 1 < end and re.fullmatch(r'evangelion-index-[0-9]{2}', stream[j+1].value or ''):
-                    changes.append((option.start, stream[j+1].end, badge if not found_badge else ''))
-                    found_badge = True
-                    j += 2
-                    continue
-                j += 1
-            if badge and not found_badge:
-                changes.append((token.end, token.end, ' ' + badge))
-        command_start = False
-    for start, end, replacement in sorted(changes, reverse=True):
-        text = text[:start] + replacement + text[end:]
-    return text
-
-
-def transform(text, root=Path('/'), numbered=False):
-    stream = tokens(text)
-    changes = []
-    blocks = []
-    pending = None
-    command_start = True
-    entry_count = 0
-    i = 0
-    while i < len(stream):
-        token = stream[i]
-        if token.kind == '{':
-            blocks.append(pending or 'block')
-            if pending == 'menuentry':
-                line_start = text.rfind('\n', 0, token.start) + 1
-                indent = re.match(r'[ \t]*', text[line_start:])[0] + '    '
-                handoff = ('\n' + indent + MARKER + '\n' +
-                    indent + 'terminal_output console\n' + indent + 'clear\n' +
-                    indent + 'echo "Starting $1..."\n')
-                existing = re.match(r'\n[ \t]*' + re.escape(MARKER) +
-                    r'\n[ \t]*terminal_output console\n[ \t]*clear\n[ \t]*echo "Starting \$1\.\.\."\n',
-                    text[token.end:])
-                if not existing:
-                    changes.append((token.end, token.end, handoff))
-                entry_count += 1
-            pending = None
-            command_start = True
-            i += 1
-            continue
-        if token.kind == '}':
-            if not blocks:
-                raise ValueError('Unbalanced GRUB block.')
-            blocks.pop()
-            command_start = True
-            i += 1
-            continue
-        if token.kind in ('\n', ';'):
-            command_start = True
-            i += 1
-            continue
-        if command_start and token.value in ('if', 'elif', 'then', 'else', 'do', '!'):
-            i += 1
-            continue
-        if command_start and token.value in ('menuentry', 'submenu', 'function'):
-            pending = token.value
-        if command_start and token.value == 'blscfg':
-            raise ValueError('Runtime BLS menus are not supported by console handoff. Use generated GRUB menu entries.')
-        if command_start and 'menuentry' in blocks and token.value in ('linux', 'linuxefi', 'linux16', 'chainloader'):
-            end = i + 1
-            while end < len(stream) and stream[end].kind == 'word':
-                end += 1
-            arguments = stream[i + 1:end]
-            if not arguments:
-                raise ValueError(f'{token.value} has no boot image.')
-            path_index = 1 if arguments[0].value == '--force' else 0
-            if path_index >= len(arguments):
-                raise ValueError('chainloader --force has no boot image.')
-            path = arguments[path_index]
-            parameters = arguments[path_index + 1:]
-            if token.value != 'chainloader':
-                parameters = visible_arguments(parameters)
-            else:
-                uki = find_uki(path.value, root)
-                if uki is None:
-                    parameters = None  # Windows and other EFI applications keep all arguments.
-                elif secure_boot(root) is not False:
-                    print('eva: EFI console enabled; Secure Boot state prevents a verified UKI command-line override.', file=sys.stderr)
-                    parameters = None
-                else:
-                    parameters = visible_arguments(parameters or uki_arguments(uki['.cmdline']))
-            if parameters is not None:
-                prefix = text[token.start:path.end]
-                changes.append((token.start, arguments[-1].end, prefix + ' ' + ' '.join(parameters)))
-        command_start = False
-        i += 1
-    if blocks or pending:
-        raise ValueError('Unclosed GRUB block.')
-    if not entry_count:
-        return text
-    for start, end, replacement in sorted(changes, reverse=True):
-        text = text[:start] + replacement + text[end:]
-    return number_entries(text) if numbered else text
-
-
-def generate(directory, root=Path('/'), numbered=False):
-    if not directory.is_dir() or directory.resolve() == (Path(__file__).resolve().parent / 'grub.d').resolve():
-        raise ValueError('Invalid original GRUB generator directory.')
-    output = []
-    for script in sorted(directory.iterdir()):
-        name = script.name
-        if (not script.is_file() or not os.access(script, os.X_OK) or name.endswith('~')
-                or name.startswith('#') and name.endswith('#') or '.dpkg-' in name
-                or name.endswith(('.rpmsave', '.rpmnew', '.sig')) or name.startswith('README')):
-            continue
-        result = subprocess.run([str(script)], check=True, stdout=subprocess.PIPE, text=True)
-        output.extend(['\n### BEGIN ' + str(script) + ' ###\n', result.stdout,
-                       '\n### END ' + str(script) + ' ###\n'])
-    # Emit only after every generator and the transformation succeed.
-    return transform(''.join(output), root, numbered)
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['filter', 'generate'])
-    parser.add_argument('path', type=Path)
-    parser.add_argument('--root', type=Path, default=Path('/'))
-    parser.add_argument('--numbered', action='store_true', default=os.environ.get('EVANGELION_NUMBERED_MENU') == '1')
-    args = parser.parse_args()
-    if args.action == 'generate':
-        print(generate(args.path, args.root, args.numbered), end='')
-    else:
-        print(transform(args.path.read_text(), args.root, args.numbered), end='')
-
-
-if __name__ == '__main__':
-    try:
-        main()
-    except (OSError, ValueError, subprocess.CalledProcessError) as error:
-        sys.exit(f'eva: Console menu generation failed: {error}')
+(($#>=2)) || die 'Usage: boot-console filter|generate PATH [--root DIRECTORY] [--numbered]'
+action=$1 input=$2;shift 2
+root=/ numbered=${EVANGELION_NUMBERED_MENU:-0}
+while (($#)); do
+    case $1 in
+        --root) (($#>=2)) || die '--root requires a directory';root=$2;shift 2;;
+        --numbered) numbered=1;shift;;
+        *) die "Unknown option: $1";;
+    esac
+done
+filter() { awk -f "$HERE/boot-console.awk" -- "$root" "$numbered" "$HERE/boot-console" < "$1"; }
+case $action in
+    filter) filter "$input";;
+    generate)
+        [[ -d $input && $(realpath -e -- "$input") != "$(realpath -m -- "$HERE/grub.d")" ]] || die 'Invalid original GRUB generator directory.'
+        temp=$(mktemp "${TMPDIR:-/tmp}/eva-menu-XXXXXXXX")
+        trap 'rm -f -- "$temp"' EXIT
+        for script in "$input"/*; do
+            [[ -f $script && -x $script ]] || continue
+            name=${script##*/}
+            case $name in *~|\#*\#|*.dpkg-*|*.rpmsave|*.rpmnew|*.sig|README*) continue;; esac
+            printf '\n### BEGIN %s ###\n' "$script" >> "$temp"
+            if [[ -n $ORIGINAL_LC_ALL_SET ]]; then
+                LC_ALL=$ORIGINAL_LC_ALL "$script" >> "$temp" || die "Generator failed: $script"
+            else
+                (unset LC_ALL; "$script") >> "$temp" || die "Generator failed: $script"
+            fi
+            printf '\n### END %s ###\n' "$script" >> "$temp"
+        done
+        filter "$temp";;
+    *) die "Unknown action: $action";;
+esac

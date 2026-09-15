@@ -3,4 +3,4 @@
 set -eu
 directory=${EVANGELION_GRUB_SOURCE_DIR:?Original GRUB generator directory is missing}
 here=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
-exec python3 "$here/boot-console" generate "$directory"
+exec bash "$here/boot-console" generate "$directory"

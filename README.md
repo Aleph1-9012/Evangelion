@@ -1,8 +1,22 @@
 # Evangelion
 
-Seven Evangelion themes for your GRUB boot menu: EVA-01, Wunder, EVA-02, Ramiel, Ayanami, Pen-Pen and SEELE. All include 720p, 1080p and 1440p profiles and matching 4K wallpapers.
+Eight Evangelion themes for your GRUB boot menu. Each includes 720p, 1080p and 1440p profiles and a matching 4K wallpaper.
 
+## Ayanami
 
+![Ayanami preview](previews/Ayanami.png)
+
+## Soryu
+
+![Soryu preview](previews/Soryu.png)
+
+## Pen-Pen
+
+![Pen-Pen preview](previews/Pen-Pen.png)
+
+## SEELE
+
+![SEELE preview](previews/SEELE.png)
 
 ## EVA-01
 
@@ -20,23 +34,9 @@ Seven Evangelion themes for your GRUB boot menu: EVA-01, Wunder, EVA-02, Ramiel,
 
 ![Ramiel preview](previews/Ramiel.png)
 
-The Ayanami, Pen-Pen and SEELE previews below are captured from GRUB.
-
-## Ayanami
-
-![Ayanami preview](previews/Ayanami.png)
-
-## Pen-Pen
-
-![Pen-Pen preview](previews/Pen-Pen.png)
-
-## SEELE
-
-![SEELE preview](previews/SEELE.png)
-
 ## Install
 
-Requires **Linux** with **GRUB 2** installed, plus **Bash**, **jq** and **Python 3.9 or newer**. Install jq with your distribution's package manager if needed.
+Requires **Linux** with **GRUB 2**, **Bash**, **awk** and standard Linux command-line tools. Python and jq are not required.
 
 The installer detects `/boot/grub` or `/boot/grub2` and the available GRUB tools. Tested on Arch Linux with GRUB 2.14.
 
@@ -60,13 +60,7 @@ Run this from any folder:
 sudo eva
 ```
 
-Choose another theme or resolution. Your selection takes effect on the next boot. You can also select a theme directly:
-
-```sh
-sudo eva set ayanami 1080p
-sudo eva set penpen 1080p
-sudo eva set seele 1440p
-```
+Choose another theme or resolution. Your selection takes effect on the next boot. For direct selection, use `sudo eva set THEME_ID PROFILE`. Run `eva list` to see the available theme IDs and profiles.
 
 ## Uninstall
 
@@ -82,13 +76,14 @@ You can also run `sudo eva uninstall` from any folder. This restores your previo
 
 Download the matching 3840×2160 wallpaper and select it in your desktop wallpaper settings:
 
+- [Ayanami wallpaper](wallpapers/Ayanami-wall.png)
+- [Soryu wallpaper](wallpapers/Soryu-wall.png)
+- [Pen-Pen wallpaper](wallpapers/Pen-Pen-wall.png)
+- [SEELE wallpaper](wallpapers/SEELE-wall.png)
 - [EVA-01 wallpaper](wallpapers/EVA01-wall.png)
 - [Wunder wallpaper](wallpapers/Wunder-wall.png)
 - [EVA-02 wallpaper](wallpapers/EVA-02-wall.png)
 - [Ramiel wallpaper](wallpapers/Ramiel-wall.png)
-- [Ayanami wallpaper](wallpapers/Ayanami-wall.png)
-- [Pen-Pen wallpaper](wallpapers/Pen-Pen-wall.png)
-- [SEELE wallpaper](wallpapers/SEELE-wall.png)
 
 For more options, rollback and known limitations, read the [installation guide](docs/ADVANCED.md).
 

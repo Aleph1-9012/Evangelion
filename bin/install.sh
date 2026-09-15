@@ -22,6 +22,7 @@ MANAGER=var/lib/evangelion-grub/manager.json
 PREVIOUS=var/lib/evangelion-grub/previous
 BOOT_RUNTIME=var/lib/evangelion-grub/boot
 BOOT_HELPER=$BOOT_RUNTIME/boot-console
+BOOT_PARSER=$BOOT_RUNTIME/boot-console.awk
 BOOT_PROXY=$BOOT_RUNTIME/grub.d/00_console
 BEGIN='# BEGIN EVANGELION GRUB (managed; use install.sh --uninstall)'
 # Recognize blocks written before install and uninstall shared one entry point.
@@ -42,6 +43,7 @@ die() { printf 'eva: %s\n' "$*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null || die "$1 is required."; }
 sha() { local result; result=$(sha256sum -- "$1") || die "Cannot hash $1"; printf '%s' "${result%% *}"; }
 shell_quote() { printf "'%s'" "${1//\'/\'\\\'\'}"; }
+record() { awk -f "$EVA_REPO/bin/state-data.awk" -- "$@"; }
 
 safe_path() {
     local relative=$2 part cursor=$1
@@ -65,18 +67,16 @@ profile_mode() {
 }
 
 load_catalog() {
-    local catalog theme name
+    local catalog theme name entries
     THEMES=(); THEME_NAMES=()
     catalog=$(safe_path "$SOURCE" catalog.json)
     # Uninstall and rollback can use saved ownership without the source catalog.
     [[ -f $catalog ]] || return 0
-    jq -e '.version == 1 and (.themes|type == "array") and
-        all(.themes[]; (.id|type == "string" and test("^[a-z][a-z0-9_-]*$")) and
-            (.name|type == "string" and length > 0 and (test("[[:cntrl:]]")|not))) and
-        ([.themes[].id]|length == (unique|length))' "$catalog" >/dev/null || die 'Invalid theme catalog'
+    entries=$(record catalog < "$catalog") || die 'Invalid theme catalog'
+    [[ -n $entries ]] || return 0
     while IFS=$'\t' read -r theme name; do
         THEMES+=("$theme"); THEME_NAMES["$theme"]=$name
-    done < <(jq -r '.themes[]|[.id,.name]|join("\t")' "$catalog")
+    done <<< "$entries"
 }
 
 mode_for() {
@@ -101,21 +101,21 @@ mode_for() {
 
 validate_hashes() {
     local data=$1 prefix=$2 path
-    jq -e 'type == "object" and all(to_entries[]; (.value|type == "string") and (.value|test("^[a-f0-9]{64}$")))' <<< "$data" >/dev/null || die 'Unsafe ownership manifest'
-    while IFS= read -r path; do
+    record hashes <<< "$data" || die 'Unsafe ownership manifest'
+    while IFS=$'\t' read -r path _; do
         [[ -n $path ]] || continue
         safe_path "$ROOT" "$path" >/dev/null
         [[ $path == "$prefix/"* || ( $prefix == "$LIBRARY" && $path == "$COMMAND" ) ]] || die "Unsafe ownership path: $path"
-    done < <(jq -r 'keys[] | [.] | @tsv' <<< "$data")
+    done < <(record pairs <<< "$data")
 }
 
 validate_choice() {
     local data=$1 theme profile mode
-    jq -e --arg path "$RUNTIME/theme.txt" 'type == "object" and (.files|type == "object") and (.files|has($path)) and (.gfxmode|type == "string")' <<< "$data" >/dev/null || die 'Invalid theme-choice record'
-    theme=$(jq -r .theme <<< "$data"); profile=$(jq -r .profile <<< "$data"); mode=$(jq -r .gfxmode <<< "$data")
+    record choice "$RUNTIME" <<< "$data" || die 'Invalid theme-choice record'
+    theme=$(record get theme <<< "$data"); profile=$(record get profile <<< "$data"); mode=$(record get gfxmode <<< "$data")
     [[ $theme =~ ^[a-z][a-z0-9_-]*$ ]] || die 'Invalid theme-choice record'
     mode_for "$profile" "$mode" >/dev/null
-    validate_hashes "$(jq -c .files <<< "$data")" "$RUNTIME"
+    validate_hashes "$(record get files <<< "$data")" "$RUNTIME"
 }
 
 load_state() {
@@ -125,15 +125,10 @@ load_state() {
     path=$(safe_path "$ROOT" "$STATE"); regular_or_absent "$path"
     if [[ -f $path ]]; then
         STATE_DATA=$(cat -- "$path")
-        jq -e --arg begin "$BEGIN" --arg legacy "$LEGACY_BEGIN" '
-            type == "object" and (.version == 1 or .version == 2 or .version == 3) and
-            (.block|type == "string") and (.block|startswith($begin+"\n") or startswith($legacy+"\n")) and
-            (.hook_hash|type == "string") and (.hook_hash|test("^[a-f0-9]{64}$")) and
-            (.prior_setting_lines|type == "array") and all(.prior_setting_lines[]; type == "string") and
-            ((.added_newline // false)|type == "boolean")' <<< "$STATE_DATA" >/dev/null || die 'Unsupported or damaged ownership manifest'
+        record state "$BEGIN" "$LEGACY_BEGIN" <<< "$STATE_DATA" || die 'Unsupported or damaged ownership manifest'
         validate_choice "$STATE_DATA"
-        validate_hashes "$(jq -c '.boot_files // {}' <<< "$STATE_DATA")" "$BOOT_RUNTIME"
-        if [[ $(jq -r '.previous != null' <<< "$STATE_DATA") == true ]]; then validate_choice "$(jq -c .previous <<< "$STATE_DATA")"; fi
+        validate_hashes "$(record get boot_files '{}' <<< "$STATE_DATA")" "$BOOT_RUNTIME"
+        if [[ $(record get previous null <<< "$STATE_DATA") != null ]]; then validate_choice "$(record get previous <<< "$STATE_DATA")"; fi
     fi
 }
 
@@ -143,8 +138,8 @@ load_manager() {
     path=$(safe_path "$ROOT" "$MANAGER"); regular_or_absent "$path"
     if [[ -f $path ]]; then
         MANAGER_DATA=$(cat -- "$path")
-        jq -e 'type == "object" and .version == 1' <<< "$MANAGER_DATA" >/dev/null || die 'Unsupported or damaged manager manifest'
-        validate_hashes "$(jq -c .files <<< "$MANAGER_DATA")" "$LIBRARY"
+        record manager <<< "$MANAGER_DATA" || die 'Unsupported or damaged manager manifest'
+        validate_hashes "$(record get files <<< "$MANAGER_DATA")" "$LIBRARY"
     fi
 }
 
@@ -171,7 +166,7 @@ font_name() {
 
 validate_references() {
     local -n resources=$1
-    local path relative name header line key value pattern suffix
+    local path relative name header line key value pattern suffix rest count i card_host=0 modules=0
     local -A names=() images=()
     local property='^[[:space:]]*([A-Za-z_][A-Za-z0-9_-]*)[[:space:]]*[:=][[:space:]]*(.*)$'
     local quoted='^"([^"]*)"' unquoted='^([^[:space:]#}]+)'
@@ -183,6 +178,10 @@ validate_references() {
                 header=$(od -An -tx1 -N8 -- "${resources[$path]}" | tr -d ' \n')
                 [[ $header == 89504e470d0a1a0a ]] || die "Runtime PNG has an invalid signature: $path"
                 images["${path#"$RUNTIME/"}"]=1;;
+            *.mod)
+                modules=$((modules + 1))
+                header=$(od -An -tx1 -N4 -- "${resources[$path]}" | tr -d ' \n')
+                [[ $header == 7f454c46 ]] || die "Invalid native GRUB module: $path";;
         esac
     done
     ((${#images[@]} && ${#names[@]})) || die 'Ready theme needs PNG artwork and PF2 fonts'
@@ -191,6 +190,7 @@ validate_references() {
         key=${BASH_REMATCH[1]}; value=${BASH_REMATCH[2]}
         if [[ $value =~ $quoted ]]; then value=${BASH_REMATCH[1]}; elif [[ $value =~ $unquoted ]]; then value=${BASH_REMATCH[1]}; else continue; fi
         case $key in
+            id) [[ $value != evangelion-cards ]] || card_host=1;;
             desktop-image|file|center_bitmap|tick_bitmap)
                 [[ -n $value && -v images[$value] ]] || die "Missing or unsupported theme image reference: $key=$value";;
             item_pixmap_style|selected_item_pixmap_style|menu_pixmap_style|scrollbar_frame|scrollbar_thumb|bar_style|highlight_style)
@@ -209,10 +209,39 @@ validate_references() {
                 [[ -n $value && -v names[$value] ]] || die "Theme font is not present in the packaged PF2 files: $value";;
         esac
     done < "${resources[$RUNTIME/theme.txt]}"
+    if ((card_host || modules)); then
+        [[ -v resources[$RUNTIME/cards.cfg] ]] || die 'Missing native card configuration'
+    fi
+    if [[ -v resources[$RUNTIME/cards.cfg] ]]; then
+        ((card_host)) || die 'Missing native card canvas'
+        count=0
+        while IFS= read -r line || [[ -n $line ]]; do
+            [[ -z $line || $line == \#* ]] && continue
+            count=$((count + 1))
+            [[ $line == 'evangelion_cards '* ]] || die 'Invalid card configuration command'
+            rest=${line#evangelion_cards }
+            for ((i=0; i<16; i++)); do
+                [[ $rest =~ ^([0-9]+)[[:space:]]+(.*)$ ]] || die 'Invalid card geometry'
+                value=${BASH_REMATCH[1]}; rest=${BASH_REMATCH[2]}
+                [[ ${#value} -le 5 ]] && ((10#$value <= 16384)) || die 'Card geometry is out of range'
+            done
+            for ((i=0; i<6; i++)); do
+                [[ $rest =~ $quoted ]] || die 'Invalid card font or color'
+                value=${BASH_REMATCH[1]}; rest=${rest#\"$value\"}; rest=${rest# }
+                if ((i<3)); then
+                    [[ -v names[$value] ]] || die "Card font is not packaged: $value"
+                else
+                    [[ $value =~ ^#[[:xdigit:]]{6}$ ]] || die 'Invalid card color'
+                fi
+            done
+            [[ -z $rest ]] || die 'Unexpected card configuration arguments'
+        done < "${resources[$RUNTIME/cards.cfg]}"
+        ((count == 1)) || die 'Expected one card configuration command'
+        [[ -v resources[$RUNTIME/modules/x86_64-efi/evangelion_cards.mod] ]] || die 'Missing native card module'
+    fi
 }
 
-# Hash maps use JSON to retain the existing installation state format. jq parses
-# records as data; neither the records nor GRUB defaults are executed as Shell.
+# Keep the existing JSON installation format, parsed as data by state-data.awk.
 hash_map() {
     local -n entries=$1
     local path digest
@@ -220,7 +249,7 @@ hash_map() {
         digest=$(sha "${entries[$path]}") || return 1
         printf '%s\t%s\n' "$path" "$digest"
     done |
-        jq -Rn '[inputs | split("\t") | {key: .[0], value: .[1]}] | from_entries'
+        record hash-map
 }
 
 source_files() {
@@ -231,12 +260,8 @@ source_files() {
     ready=$(safe_path "$base" runtime-ready.json)
     [[ -f $ready ]] || die "Theme is unavailable: $theme/$profile has no readiness record"
     native=$(profile_mode "$profile")
-    jq -e --arg theme "$theme" --arg profile "$profile" --arg mode "$native" '
-        type == "object" and .ready == true and .theme == $theme and .profile == $profile and
-        .canvas == ($mode|split("x")|map(tonumber)) and
-        (.sha256|type == "object" and length > 0) and
-        all(.sha256|to_entries[]; (.value|type == "string") and (.value|test("^[a-f0-9]{64}$")))' "$ready" >/dev/null || die "Invalid readiness record: $theme/$profile"
-    while IFS= read -r relative; do safe_path "$base" "$relative" >/dev/null; done < <(jq -r '.sha256|keys[]' "$ready")
+    expected=$(record readiness "$theme" "$profile" "$native" < "$ready") || die "Invalid readiness record: $theme/$profile"
+    while IFS=$'\t' read -r relative _; do safe_path "$base" "$relative" >/dev/null; done < <(record pairs <<< "$expected")
     while IFS= read -r -d '' path; do
         relative=${path#"$base/"}
         safe_path "$base" "$relative" >/dev/null
@@ -245,11 +270,10 @@ source_files() {
         # hash_map reads this array through a nameref.
         # shellcheck disable=SC2034
         assets["$relative"]=$path
-        case $relative in theme.txt|*.png|fonts/*.pf2) FILES["$RUNTIME/$relative"]=$path;; esac
+        case $relative in theme.txt|cards.cfg|*.png|fonts/*.pf2|modules/*/evangelion_cards.mod) FILES["$RUNTIME/$relative"]=$path;; esac
     done < <(find "$base" -mindepth 1 -print0)
     hashes=$(hash_map assets) || die 'Cannot hash theme assets'
-    expected=$(jq -cS .sha256 "$ready")
-    [[ $(jq -cS . <<< "$hashes") == "$expected" ]] || die "Runtime files differ from the readiness record; rebuild: $theme/$profile"
+    [[ $hashes == "$expected" ]] || die "Runtime files differ from the readiness record; rebuild: $theme/$profile"
     validate_references FILES
 }
 
@@ -268,12 +292,12 @@ plan_add() {
 owned_changes() {
     local old=$1 removing=$3 relative current expected
     local -n desired=$2
-    local -A union=()
-    while IFS= read -r relative; do union["$relative"]=1; done < <(jq -r 'keys[]' <<< "$old")
+    local -A union=() old_hashes=()
+    while IFS=$'\t' read -r relative expected; do union["$relative"]=1; old_hashes["$relative"]=$expected; done < <(record pairs <<< "$old")
     for relative in "${!desired[@]}"; do union["$relative"]=1; done
     for relative in "${!union[@]}"; do
         current=$(safe_path "$ROOT" "$relative"); regular_or_absent "$current"
-        expected=$(jq -r --arg p "$relative" '.[$p] // empty' <<< "$old")
+        expected=${old_hashes[$relative]:-}
         if [[ -n $expected ]]; then
             if [[ -f $current && $(sha "$current") != "$expected" ]]; then
                 if ((removing)); then printf 'Preserving modified file: /%s\n' "$relative"; continue; fi
@@ -290,7 +314,7 @@ plan_manager() {
     local -A manager_files=()
     load_manager
     if ((!removing)); then
-        for relative in bin/install.sh bin/eva bin/boot-console bin/grub-generator LICENSE docs/NOTICE.md docs/ADVANCED.md docs/BOOT_CONSOLE.md; do
+        for relative in bin/install.sh bin/eva bin/boot-console bin/boot-console.awk bin/state-data.awk bin/grub-generator LICENSE docs/NOTICE.md docs/ADVANCED.md docs/BOOT_CONSOLE.md; do
             path=$(safe_path "$EVA_REPO" "$relative")
             [[ -f $path ]] || die "Missing package file: $relative"
             manager_files["$LIBRARY/$relative"]=$path
@@ -316,10 +340,10 @@ plan_manager() {
         done; done
         ((count)) || die 'No ready theme profiles are available for the manager'
     fi
-    owned_changes "$(jq -c '.files // {}' <<< "$MANAGER_DATA")" manager_files "$removing"
+    owned_changes "$(record get files '{}' <<< "$MANAGER_DATA")" manager_files "$removing"
     if ((removing)); then plan_add "$MANAGER"; else
         # The full catalog can exceed the OS limit for one argv string.
-        hash_map manager_files | jq -S '{version: 1, files: .}' > "$WORK/manager.json"
+        hash_map manager_files | record wrap-manager > "$WORK/manager.json"
         plan_add "$MANAGER" "$WORK/manager.json"
     fi
 }
@@ -332,11 +356,7 @@ detect_grub_layout() {
     regular_or_absent "$state_path"
     if [[ -f $state_path ]]; then
         # Existing ownership paths record the directory, including v1 manifests.
-        recorded=$(jq -er '
-            if (.files|type) != "object" then error("Invalid ownership manifest") else
-                [.files|keys[]|capture("^(?<directory>boot/grub2?)/themes/evangelion/").directory] | unique |
-                if length == 1 then .[0] else error("Ambiguous GRUB ownership paths") end
-            end' "$state_path") || die 'Cannot determine the configured GRUB directory from state'
+        recorded=$(record grub-dir < "$state_path") || die 'Cannot determine the configured GRUB directory from state'
     fi
     if [[ -n $GRUB_DIR_OPTION ]]; then
         case $GRUB_DIR_OPTION in /boot/grub|/boot/grub2) ;; *) die '--grub-dir must be /boot/grub or /boot/grub2';; esac
@@ -367,19 +387,7 @@ find_grub_command() {
 }
 
 strip_block() {
-    # jq 1.6 reserves $end, and jq 1.6/1.7 bind `as` before addition.
-    jq -Rjs --arg begin "$BEGIN" --arg legacy "$LEGACY_BEGIN" --arg end_marker "$END" --argjson state "$STATE_DATA" '
-        ((indices($begin+"\n")|length) + (indices($legacy+"\n")|length)) as $starts |
-        (indices($end_marker+"\n")|length) as $ends |
-        if $state == null then
-            if $starts != 0 or $ends != 0 then error("Managed block exists without an ownership manifest") else . end
-        else
-            if $starts != 1 or $ends != 1 or (contains($state.block)|not) then error("Managed defaults were edited; restore the recorded block before continuing") else
-                index($state.block) as $start | .[$start+($state.block|length):] as $suffix |
-                if $state.added_newline and $start > 0 and .[$start-1:$start] == "\n" and ($suffix == "" or ($suffix|startswith("\n")))
-                then .[:$start-1] + $suffix else .[:$start] + $suffix end
-            end
-        end' "$ROOT/$DEFAULTS" > "$WORK/base-defaults"
+    record strip-block "$ROOT/$DEFAULTS" "$BEGIN" "$LEGACY_BEGIN" "$END" <<< "$STATE_DATA" > "$WORK/base-defaults"
 }
 
 make_hook() {
@@ -404,6 +412,30 @@ HEADER
         # shellcheck disable=SC2016
         printf 'loadfont "$prefix/%s"\n' "${path#"$GRUB_DIR/"}"
     done < <(printf '%s\n' "${!FILES[@]}" | sort)
+    if [[ -v FILES[$RUNTIME/cards.cfg] ]]; then
+        # GRUB's insmod and source can return success after an error. Only the
+        # native viewer sets this marker after accepting its configuration.
+        cat <<'CARDS'
+unset evangelion_cards_ready
+if [ -f "$prefix/themes/evangelion/modules/$grub_cpu-$grub_platform/evangelion_cards.mod" ]; then
+  insmod "$prefix/themes/evangelion/modules/$grub_cpu-$grub_platform/evangelion_cards.mod"
+  set theme="$prefix/themes/evangelion/theme.txt"
+  source "$prefix/themes/evangelion/cards.cfg"
+  if [ "$evangelion_cards_ready" = 1 ]; then
+    if terminal_output gfxterm; then
+      export theme
+    else
+      unset theme
+      terminal_output console
+    fi
+  else
+    unset theme
+    terminal_output console
+  fi
+fi
+CARDS
+        return
+    fi
     cat <<'FOOTER'
 if terminal_output gfxterm; then
   set theme="$prefix/themes/evangelion/theme.txt"
@@ -432,35 +464,35 @@ plan_changes() {
         [[ -f $path ]] || die "Existing GRUB installation required: /$relative"
     done
     strip_block
-    old_files=$(jq -c '.files // {}' <<< "$STATE_DATA")
-    old_previous=$(jq -c '.previous // null' <<< "$STATE_DATA")
-    old_snapshot=$(jq -c --arg runtime "$RUNTIME/" --arg previous "$PREVIOUS/" '(.files // {}) | with_entries(.key |= ($previous + ltrimstr($runtime)))' <<< "$old_previous")
+    old_files=$(record get files '{}' <<< "$STATE_DATA")
+    old_previous=$(record get previous 'null' <<< "$STATE_DATA")
+    old_snapshot=$(record snapshot "$RUNTIME/" "$PREVIOUS/" <<< "$old_previous")
     path=$(safe_path "$ROOT" "$HOOK"); regular_or_absent "$path"
     if [[ $STATE_DATA != null ]]; then
-        [[ -f $path && $(sha "$path") == "$(jq -r .hook_hash <<< "$STATE_DATA")" ]] || die 'The managed loader changed; restore it before continuing'
+        [[ -f $path && $(sha "$path") == "$(record get hook_hash <<< "$STATE_DATA")" ]] || die 'The managed loader changed; restore it before continuing'
     else [[ ! -e $path ]] || die "Refusing to overwrite an unowned /$HOOK"; fi
     if [[ $ACTION == uninstall ]]; then
         plan_add "$DEFAULTS" "$WORK/base-defaults"
         plan_add "$HOOK"; plan_add "$STATE"
         owned_changes "$old_files" empty 1
         owned_changes "$old_snapshot" empty 1
-        owned_changes "$(jq -c '.boot_files // {}' <<< "$STATE_DATA")" empty 1
+        owned_changes "$(record get boot_files '{}' <<< "$STATE_DATA")" empty 1
         return
     fi
-    need python3
     boot_files["$BOOT_HELPER"]=$EVA_REPO/bin/boot-console
+    boot_files["$BOOT_PARSER"]=$EVA_REPO/bin/boot-console.awk
     boot_files["$BOOT_PROXY"]=$EVA_REPO/bin/grub-generator
-    owned_changes "$(jq -c '.boot_files // {}' <<< "$STATE_DATA")" boot_files 0
+    owned_changes "$(record get boot_files '{}' <<< "$STATE_DATA")" boot_files 0
     boot_hashes=$(hash_map boot_files)
     if [[ $ACTION == rollback ]]; then
         [[ $old_previous != null ]] || die 'No previous Evangelion choice is saved; use uninstall to restore the pre-Evangelion appearance'
-        THEME=$(jq -r .theme <<< "$old_previous"); PROFILE=$(jq -r .profile <<< "$old_previous"); mode=$(jq -r .gfxmode <<< "$old_previous")
+        THEME=$(record get theme <<< "$old_previous"); PROFILE=$(record get profile <<< "$old_previous"); mode=$(record get gfxmode <<< "$old_previous")
         FILES=()
         while IFS=$'\t' read -r relative expected; do
             path=$(safe_path "$ROOT" "$PREVIOUS/${relative#"$RUNTIME/"}")
             [[ -f $path && $(sha "$path") == "$expected" ]] || die "Previous theme snapshot is missing or modified: $path"
             FILES["$relative"]=$path
-        done < <(jq -r '.files|to_entries[]|[.key,.value]|@tsv' <<< "$old_previous")
+        done < <(record pairs files <<< "$old_previous")
         validate_references FILES
     else
         source_files "$THEME" "$PROFILE"
@@ -468,16 +500,17 @@ plan_changes() {
     fi
     owned_changes "$old_files" FILES 0
     hashes=$(hash_map FILES)
+    printf '%s\n' "$hashes" > "$WORK/files.json"
     previous=$old_previous
-    if [[ $STATE_DATA != null ]] && ! jq -e --arg theme "$THEME" --arg profile "$PROFILE" --arg mode "$mode" --argjson files "$hashes" '.theme == $theme and .profile == $profile and .gfxmode == $mode and .files == $files' <<< "$STATE_DATA" >/dev/null; then
+    if [[ $STATE_DATA != null ]] && ! record same-choice "$THEME" "$PROFILE" "$mode" "$WORK/files.json" <<< "$STATE_DATA"; then
         while IFS=$'\t' read -r relative expected; do
             path=$(safe_path "$ROOT" "$relative")
             [[ -f $path && $(sha "$path") == "$expected" ]] || die "Current theme cannot be saved for rollback: /$relative is missing or modified"
             # shellcheck disable=SC2034
             snapshot["$PREVIOUS/${relative#"$RUNTIME/"}"]=$path
-        done < <(jq -r 'to_entries[]|[.key,.value]|@tsv' <<< "$old_files")
+        done < <(record pairs <<< "$old_files")
         owned_changes "$old_snapshot" snapshot 0
-        previous=$(jq -c '{theme,profile,gfxmode,files}' <<< "$STATE_DATA")
+        previous=$(record choice-record <<< "$STATE_DATA")
     fi
     {
         printf '%s\n' "$BEGIN" '# The late loader selects the theme only after the exact mode succeeds.' 'GRUB_THEME=""' 'GRUB_FONT=""' "GRUB_GFXMODE=\"$mode\"" 'GRUB_TIMEOUT_STYLE="menu"'
@@ -488,17 +521,15 @@ plan_changes() {
         printf '  grub_mkconfig_dir=%s\n' "$(shell_quote "${ROOT%/}/$BOOT_RUNTIME/grub.d")"
         printf '%s\n' 'fi' "$END"
     } > "$WORK/block"
-    newline=$(jq -Rs 'length > 0 and (endswith("\n")|not)' "$WORK/base-defaults")
+    newline=$(record newline "$WORK/base-defaults")
     cat -- "$WORK/base-defaults" > "$WORK/defaults"
     if [[ $newline == true ]]; then printf '\n' >> "$WORK/defaults"; fi
     cat -- "$WORK/block" >> "$WORK/defaults"
     make_hook "$mode" > "$WORK/hook"
-    jq -Sn --arg theme "$THEME" --arg profile "$PROFILE" --arg mode "$mode" --rawfile block "$WORK/block" --rawfile base "$WORK/base-defaults" --argjson newline "$newline" --argjson previous "$previous" --argjson files "$hashes" --argjson boot_files "$boot_hashes" --arg hook_hash "$(sha "$WORK/hook")" --argjson old "$STATE_DATA" '{
-        version: 3, theme: $theme, profile: $profile, gfxmode: $mode, block: $block, added_newline: $newline,
-        previous: $previous, files: $files, hook_hash: $hook_hash,
-        boot_files: $boot_files,
-        prior_setting_lines: (if $old != null then $old.prior_setting_lines else [$base|scan("(?m)^\\s*(?:GRUB_THEME|GRUB_FONT|GRUB_GFXMODE|GRUB_TIMEOUT_STYLE)\\s*=.*$")] end)
-    }' > "$WORK/state.json"
+    printf '%s\n' "$STATE_DATA" > "$WORK/old-state.json"
+    printf '%s\n' "$previous" > "$WORK/previous.json"
+    printf '%s\n' "$boot_hashes" > "$WORK/boot-files.json"
+    record write-state "$WORK" "$THEME" "$PROFILE" "$mode" "$(sha "$WORK/hook")" "$newline" > "$WORK/state.json"
     plan_add "$DEFAULTS" "$WORK/defaults"; plan_add "$HOOK" "$WORK/hook"; plan_add "$STATE" "$WORK/state.json"
     if ((DEPLOY)); then plan_manager; fi
     printf 'Selected %s %s, exact graphics mode %s.\n' "$THEME" "$PROFILE" "$mode"
@@ -651,7 +682,7 @@ apply_changes() {
             # Staging generators need the same transformation as the live proxy.
             local -a helper_options=()
             if [[ $THEME == ayanami || $THEME == seele ]]; then helper_options+=(--numbered); fi
-            python3 "$ROOT/$BOOT_HELPER" filter "$CANDIDATE" --root "$ROOT" "${helper_options[@]}" > "$WORK/console-config" || die 'Console handoff generation failed'
+            bash "$ROOT/$BOOT_HELPER" filter "$CANDIDATE" --root "$ROOT" "${helper_options[@]}" > "$WORK/console-config" || die 'Console handoff generation failed'
             cat -- "$WORK/console-config" > "$CANDIDATE"
         fi
         "$checker" "$CANDIDATE" || die "Generated GRUB configuration failed its syntax check"
@@ -660,7 +691,7 @@ apply_changes() {
             if grep -qF '# Evangelion exact-mode loader' "$CANDIDATE"; then die 'Generated config still contains the Evangelion loader'; fi
         else
             tail -n +3 "$ROOT/$HOOK" > "$WORK/expected-loader"
-            jq -en --rawfile expected "$WORK/expected-loader" --rawfile generated "$CANDIDATE" '$generated|contains($expected)' >/dev/null || die 'Generated config omitted or changed the Evangelion loader'
+            record contains "$CANDIDATE" "$WORK/expected-loader" || die 'Generated config omitted or changed the Evangelion loader'
         fi
         transaction_change "$BACKUP" "$ROOT/$CONFIG" 600
         transaction_change "$CONFIG" "$CANDIDATE"
@@ -679,7 +710,7 @@ apply_changes() {
 }
 
 init_workspace() {
-    need jq; need sha256sum; need flock
+    need awk; need sha256sum; need flock
     ROOT=$(realpath -e -- "$ROOT")
     [[ -d $ROOT ]] || die '--root must be an existing directory'
     SOURCE=$(realpath -m -- "$SOURCE")

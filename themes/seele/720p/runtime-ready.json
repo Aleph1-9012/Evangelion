@@ -146,8 +146,8 @@
     "theme.txt": "15095503e9afe31edc82029d998262123a8239b8fbbcda06c236e1385901b3cd"
   },
   "verification": {
-    "date": "2026-09-14",
-    "environment": "QEMU with OVMF and stock GRUB 2.14",
+    "date": "2026-09-15",
+    "environment": "QEMU TCG, OVMF x86-64 UEFI, stock GRUB 2.14",
     "scenarios": [
       "auto",
       "fallback",
