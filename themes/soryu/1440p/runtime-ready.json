@@ -15,7 +15,7 @@
   },
   "menu_type": "horizontal_cards",
   "sha256": {
-    "README.md": "e3e2d714c0ca2dcd7a5e52c8a4904471ab0a5fd9dd1ec84a80ebaba2cadece20",
+    "README.md": "0708c6c46132a6e9352b04e2b42772f838226a73a66231d6bc893ddff36f3d91",
     "background.png": "dc992454cbc31a5468f1f20f11feb24abd511e01c4d354721cedc10465ced025",
     "cards.cfg": "41a2a21c15f8f9d74e535a8f5296b79c27d853d42ce8425e958401a7a5f4a18a",
     "desktop.png": "5475d0390d2438ff7433e92da41d0301b67bb26332b933c9b2ad59b8eb16b0d5",
@@ -24,26 +24,24 @@
     "fonts/soryu-1440p-selected.pf2": "44720040abfefdd0a5ebbaa01a57da6a63f95d9bffd120aea545247bd8cc8ad7",
     "fonts/soryu-1440p-timer.pf2": "9e2b654fbdc6de6914d519309d415deb8fb7f35c8769b82c7a4933a1e1d15fb0",
     "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
-    "modules/i386-pc/evangelion_cards.mod": "cb0729021a002b4c8e3f01f24f41655ca0fd4d305c0d66e0856f6da0adf2f74e",
-    "modules/x86_64-efi/evangelion_cards.mod": "cf9a1a8e897507165b3c2f73fdd04ad2fea0343544520c969323237effc7143c",
+    "modules/i386-pc/evangelion_cards.mod": "242dd1ef0c04dc773e3286fb7ed1f41e163b55929508b7cd71e62adc0c964a77",
+    "modules/x86_64-efi/evangelion_cards.mod": "c7f25cb67de8bc507922dc94a02a5b7de738a15d4492d5eff06a11d1de3bd484",
     "progress/timer-caption.png": "f94d6a69b8040d589b6a456977d9c32979121c84952714d8af2c0f687f888d62",
     "progress/transparent.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
     "theme.txt": "cdd758bda167814d84ad5c984fd3a3eac3ce6edd8f28f66f2c7c6cbe231b89c5"
   },
   "verification": {
     "date": "2026-09-15",
-    "environment": "QEMU TCG, OVMF x86-64 UEFI, stock GRUB 2.14; additional GRUB 2.12 UEFI and GRUB 2.14 BIOS coverage",
+    "environment": "QEMU: GRUB 2.12 and 2.14 x86-64 UEFI; GRUB 2.14 PC BIOS; horizontal arrows, entry 10 boot, console/editor and theme-switch restoration",
     "scenarios": [
       "auto",
+      "horizontal",
       "manual",
       "navigate",
-      "three",
-      "uki"
+      "three"
     ],
     "graphics_modes": [
-      "2560x1440",
-      "2560x1600",
-      "3840x2160"
+      "2560x1440"
     ],
     "boot_handoff": "Shared installer and console helper; visible Linux boot messages; no added delay."
   }

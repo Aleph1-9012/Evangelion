@@ -1,5 +1,7 @@
 # Version 2.0.0
 
+- Fixed Soryu's Right Arrow booting the current entry. Left and Right now move between cards, including submenus and scrolling menus. Enter boots the selected entry. Up/Down and editor/console cursor movement are preserved.
+
 - Added Ayanami, Soryu, Pen-Pen and SEELE, bringing the collection to eight themes.
 - Included 720p, 1080p and 1440p profiles and matching 3840×2160 wallpapers for every theme.
 - Added Soryu's horizontal cards, wrapped real entry titles and scrolling live numbers.

@@ -15,7 +15,7 @@
   },
   "menu_type": "horizontal_cards",
   "sha256": {
-    "README.md": "bf8e378f45ebc10516d895140f7e778ac9469ecac213d0403e3dc95eb0773e98",
+    "README.md": "c5faace02edd97452e799d4b7a16248e76ea3db190211215337c16d48eceba11",
     "background.png": "f66435c4a684f536fcc8d70356095bf1ac6cd2dcf4c48e19217359b294aaddbe",
     "cards.cfg": "b9bf1bc8c5e6cb28d6c2cad7e1fd3acf5f15d4160152f104f6eeee4bf65d5c77",
     "desktop.png": "5475d0390d2438ff7433e92da41d0301b67bb26332b933c9b2ad59b8eb16b0d5",
@@ -24,20 +24,20 @@
     "fonts/soryu-1080p-selected.pf2": "b0781349419eef9ab9a8a5feeedf76e63051c32ced0bc505958c5726510d01fa",
     "fonts/soryu-1080p-timer.pf2": "b66a8eee2e51c0a62cc2da6c25bcd27ef345824d19144b9fd063650f746b1cab",
     "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
-    "modules/i386-pc/evangelion_cards.mod": "cb0729021a002b4c8e3f01f24f41655ca0fd4d305c0d66e0856f6da0adf2f74e",
-    "modules/x86_64-efi/evangelion_cards.mod": "cf9a1a8e897507165b3c2f73fdd04ad2fea0343544520c969323237effc7143c",
+    "modules/i386-pc/evangelion_cards.mod": "242dd1ef0c04dc773e3286fb7ed1f41e163b55929508b7cd71e62adc0c964a77",
+    "modules/x86_64-efi/evangelion_cards.mod": "c7f25cb67de8bc507922dc94a02a5b7de738a15d4492d5eff06a11d1de3bd484",
     "progress/timer-caption.png": "7a2222e3728d684a922c054a6c1a4e6317a8355a2ec27832b9a13da00a8d66af",
     "progress/transparent.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
     "theme.txt": "26664867c674dc0903d364ab02714b262e63a1d447d4c43354c5c2caa3cec80c"
   },
   "verification": {
     "date": "2026-09-15",
-    "environment": "QEMU TCG, OVMF x86-64 UEFI, stock GRUB 2.14; additional GRUB 2.12 UEFI and GRUB 2.14 BIOS coverage",
+    "environment": "QEMU: GRUB 2.12 and 2.14 x86-64 UEFI; GRUB 2.14 PC BIOS; horizontal arrows, entry 10 boot, console/editor and theme-switch restoration",
     "scenarios": [
       "auto",
+      "horizontal",
       "manual",
       "navigate",
-      "submenu",
       "three"
     ],
     "graphics_modes": [

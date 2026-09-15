@@ -81,7 +81,9 @@ Selecting the same theme, profile and mode again makes no changes when the owned
 ## Horizontal card compatibility
 
 Soryu uses four horizontal cards with wrapped titles and live entry numbers.
-Up and Down move selection; Enter opens a submenu or boots an entry. Menus
+Left and Right move between cards; Up and Down also work. Enter opens a
+submenu or boots the selected entry. Arrow keys retain normal cursor
+movement in the command console and editor. Menus
 with more than four entries scroll, and numbers follow the real entries.
 Very long titles end with an ellipsis when all available lines are full.
 The AUTO BOOT caption, seconds and unit disappear together when the timeout
