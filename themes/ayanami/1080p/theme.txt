@@ -53,10 +53,10 @@ terminal-border: "0"
 
 + circular_progress {
   id = "__timeout__"
-  left = 50%-960
-  top = 50%-540
-  width = 1920
-  height = 1080
+  left = 50%-924
+  top = 50%+78
+  width = 753
+  height = 443
   visible = false
   num_ticks = 0
   center_bitmap = "progress/timer-mask.png"

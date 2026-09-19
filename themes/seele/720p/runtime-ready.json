@@ -132,7 +132,7 @@
     "progress/cover-06.png": "f792b6755d5a356079b880150e5ca835a895b2348f561aa725926b6b94eb83e4",
     "progress/cover-07.png": "d94cd8f43987622df84463352f3cf992c9a059a9feb0d57fa3eca30350f3220f",
     "progress/timer-base.png": "d044caf63a0ad5f37ca34e85d026deb098411a2182a8d3fa67855e57d8b71122",
-    "progress/timer-mask.png": "e203763357177d4db8d9ebe59ff552906c069b9bfd9502fe1b05a295a49d130a",
+    "progress/timer-mask.png": "3805723ac8dfaac53f252b3398d4984dfea58cc42f83391dfc4203c3b9375527",
     "progress/transparent.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
     "selectors/item_c.png": "a56ab70e656ab930e7e13c9b989e3c40a85048af0ec2158f8a816fae73d4bd9e",
     "selectors/item_e.png": "fc57627fbbbe99f42024cc9df1c3af9d2c1f998d4ed5f7fcd2b58897c103747b",
@@ -142,11 +142,11 @@
     "selectors/selected_e.png": "fb9af0fc1ccb3568cc168d354d8de0655b952e69bd58c81978991500d5eca731",
     "selectors/selected_w.png": "25ec5ca026c8f9a478bf257117005f1313cf456a84bf4a53e84010656262bdf0",
     "selectors/thumb_c.png": "83b420fdb9f43ed2fb497b5750ff46db1888b501bd81198f1c4fc35e933ef84d",
-    "theme.txt": "a5600a16831a5ab4e6d2e2a32c0acb128b0af73507ba2bd294419961a5d08822"
+    "theme.txt": "8ddbd7f5c782b0e3290f452ae674650ab2057ed7c626a1895acb8f9312b056c1"
   },
   "verification": {
     "date": "2026-09-19",
-    "environment": "QEMU/OVMF, stock GRUB 2.14 x86_64-efi; refreshed supplied SEELE artwork with optimized runtime assets",
+    "environment": "QEMU/OVMF, stock GRUB 2.14, Linux and UKI console handoff",
     "scenarios": [
       "auto",
       "fallback",

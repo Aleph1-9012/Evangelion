@@ -145,6 +145,21 @@ load_manager() {
 
 font_name() {
     local file=$1 header offset=12 length tag size b0 b1 b2 b3
+    # Generated PF2 files put NAME first. Read that short header in one pass;
+    # retain the section reader for longer names and other valid layouts.
+    if header=$(od -An -v -tu1 -N256 -- "$file" | awk '
+        { for (i=1; i<=NF; i++) b[++n]=$i }
+        END {
+            split("70 73 76 69 0 0 0 4 80 70 70 50 78 65 77 69", signature)
+            if (n<20) exit 1
+            for (i=1; i<=16; i++) if (b[i]!=signature[i]) exit 1
+            size=((b[17]*256+b[18])*256+b[19])*256+b[20]
+            if (size>n-20) exit 1
+            for (i=21; i<=20+size; i++) if (b[i]) printf "%c",b[i]
+        }'); then
+        printf '%s' "$header"
+        return
+    fi
     header=$(od -An -tx1 -N12 -- "$file" | tr -d ' \n')
     [[ $header == 46494c450000000450464632 ]] || die 'Runtime font has an invalid PF2 header'
     length=$(stat -c %s -- "$file")
@@ -293,6 +308,10 @@ source_files() {
 plan_add() {
     local relative=$1 source=${2:-} path
     path=$(safe_path "$ROOT" "$relative"); regular_or_absent "$path"
+    if [[ -z $source && ! -e $path ]] || { [[ -n $source && -f $path ]] && cmp -s -- "$path" "$source"; }; then
+        unset 'PLAN[$relative]'
+        return
+    fi
     if [[ -z $source ]]; then
         PLAN["$relative"]=
     else
@@ -303,16 +322,24 @@ plan_add() {
 }
 
 owned_changes() {
-    local old=$1 removing=$3 relative current expected
+    local old=$1 removing=$3 relative current expected hashes
     local -n desired=$2
-    local -A union=() old_hashes=()
+    local -A union=() old_hashes=() current_files=() current_hashes=()
     while IFS=$'\t' read -r relative expected; do union["$relative"]=1; old_hashes["$relative"]=$expected; done < <(record pairs <<< "$old")
     for relative in "${!desired[@]}"; do union["$relative"]=1; done
+    for relative in "${!old_hashes[@]}"; do
+        current=$(safe_path "$ROOT" "$relative"); regular_or_absent "$current"
+        if [[ -f $current ]]; then current_files["$relative"]=$current; fi
+    done
+    hashes=$(hash_map current_files) || die 'Cannot hash owned files'
+    while IFS=$'\t' read -r relative expected; do
+        [[ -z $relative ]] || current_hashes["$relative"]=$expected
+    done < <(record pairs <<< "$hashes")
     for relative in "${!union[@]}"; do
         current=$(safe_path "$ROOT" "$relative"); regular_or_absent "$current"
         expected=${old_hashes[$relative]:-}
         if [[ -n $expected ]]; then
-            if [[ -f $current && $(sha "$current") != "$expected" ]]; then
+            if [[ -f $current && ${current_hashes[$relative]:-} != "$expected" ]]; then
                 if ((removing)); then printf 'Preserving modified file: /%s\n' "$relative"; continue; fi
                 die "Refusing to overwrite a modified owned file: /$relative"
             fi
@@ -503,9 +530,11 @@ plan_changes() {
         FILES=()
         while IFS=$'\t' read -r relative expected; do
             path=$(safe_path "$ROOT" "$PREVIOUS/${relative#"$RUNTIME/"}")
-            [[ -f $path && $(sha "$path") == "$expected" ]] || die "Previous theme snapshot is missing or modified: $path"
+            [[ -f $path ]] || die "Previous theme snapshot is missing or modified: $path"
             FILES["$relative"]=$path
         done < <(record pairs files <<< "$old_previous")
+        hashes=$(hash_map FILES) || die 'Cannot hash previous theme snapshot'
+        [[ $hashes == "$(record get files <<< "$old_previous")" ]] || die 'Previous theme snapshot is missing or modified'
         validate_references FILES
     else
         source_files "$THEME" "$PROFILE"
@@ -518,10 +547,12 @@ plan_changes() {
     if [[ $STATE_DATA != null ]] && ! record same-choice "$THEME" "$PROFILE" "$mode" "$WORK/files.json" <<< "$STATE_DATA"; then
         while IFS=$'\t' read -r relative expected; do
             path=$(safe_path "$ROOT" "$relative")
-            [[ -f $path && $(sha "$path") == "$expected" ]] || die "Current theme cannot be saved for rollback: /$relative is missing or modified"
+            [[ -f $path ]] || die "Current theme cannot be saved for rollback: /$relative is missing or modified"
             # shellcheck disable=SC2034
             snapshot["$PREVIOUS/${relative#"$RUNTIME/"}"]=$path
         done < <(record pairs <<< "$old_files")
+        hashes=$(hash_map snapshot) || die 'Cannot hash current theme snapshot'
+        [[ $hashes == "$(record snapshot "$RUNTIME/" "$PREVIOUS/" <<< "$STATE_DATA")" ]] || die 'Current theme cannot be saved for rollback: files were modified'
         owned_changes "$old_snapshot" snapshot 0
         previous=$(record choice-record <<< "$STATE_DATA")
     fi

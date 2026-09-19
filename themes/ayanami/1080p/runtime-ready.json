@@ -125,7 +125,7 @@
     "progress/cell-07.png": "18bdfa642c592d9eeef62e059f45355a8bf75b4450b070c69d75356975c69686",
     "progress/cell-08.png": "7b8a313b8ab4687ee3604c9ff6beb20e466d09164b6138f634637513ad7c8460",
     "progress/timer-base.png": "3518cde180edefd868d7bb28d5db01246c4777afade93c876f6b1f93708d8880",
-    "progress/timer-mask.png": "6b864e5043199715cf79918109aa33deddfeff06d56a9cec0b36e6e37d8c7bc8",
+    "progress/timer-mask.png": "5867f5d2aa925530c39400ee7fe2fb65a743724e717a2e0604750f948ee93e9f",
     "progress/transparent.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
     "selectors/item_e.png": "c9b9840f2926124cc4d13b39f755288b0badd6bb516032458e594d6f61f903fa",
     "selectors/item_w.png": "d35c59e051c2587eef3870b1570d13a354fa71850fbacfcc0faf412702379df0",
@@ -134,11 +134,11 @@
     "selectors/selected_e.png": "c9b9840f2926124cc4d13b39f755288b0badd6bb516032458e594d6f61f903fa",
     "selectors/selected_w.png": "48574e166907a27085d3c8af2e8e5c51e3c9f55da972e0bb500f10a7b17b4117",
     "selectors/thumb_c.png": "c1650f919ee993386134be3e06732725260386abf62353eaceede3edabef85c6",
-    "theme.txt": "c8a75ee299647ed9575bb371f6527e81ee9232d6b6ecfa7a8c9b3c0a49a7746a"
+    "theme.txt": "f02a0817f6ebcd28f93cf75afe4a1497af6a81d09654fce7ea4bc40b55b33590"
   },
   "verification": {
     "date": "2026-09-19",
-    "environment": "QEMU TCG / OVMF / stock GRUB 2.14; Soryu horizontal navigation also checked with GRUB 2.12 and SeaBIOS",
+    "environment": "QEMU/OVMF, stock GRUB 2.14, Linux and UKI console handoff",
     "scenarios": [
       "auto",
       "manual",
