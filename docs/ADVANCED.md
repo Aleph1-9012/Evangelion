@@ -47,7 +47,7 @@ Initial direct selection accepts `sudo ./install.sh eva01 1440p`, or the origina
 sudo eva set wunder 1440p --dry-run
 ```
 
-Only profiles listed in `themes/catalog.json` with a matching `runtime-ready.json` record, PNG artwork, `theme.txt` and `fonts/*.pf2` can be installed. The installer checks the recorded canvas dimensions and every asset's SHA256, requires every referenced image and styled-box center slice, and matches theme font names against the names embedded in the packaged PF2 files. Changed, missing or unrecorded assets require a rebuild.
+Only profiles listed in `themes/catalog.json` with a matching `runtime-ready.json` record, PNG artwork, `theme.txt` and `fonts/*.pf2` can be installed. The installer checks the recorded canvas dimensions and every asset's SHA256, requires every referenced image and at least one valid slice per styled box, and matches theme font names against the names embedded in the packaged PF2 files. Changed, missing or unrecorded assets require a rebuild.
 
 The installer and chooser use Bash and awk to read the JSON asset and ownership records. The boot helper also uses Bash and awk to process generated entries as data. Existing installation records remain compatible. To refresh only the installed command and theme catalog, run `sudo ./install.sh --no-apply` from the updated folder. This preserves the current choice, rollback snapshot and original GRUB settings.
 
@@ -176,7 +176,9 @@ sudo eva uninstall
 
 Uninstall removes the marked block and loader, regenerates the configuration from the current system, and removes owned runtime files, snapshots, command and catalog files whose hashes still match. This restores the prior theme settings while retaining unrelated edits made after installation. Files you modified and files outside the installer's ownership remain in place and are reported. Empty owned directories are removed. Catalog-only uninstall does not touch GRUB. Repeating `./install.sh --uninstall` after removal makes no changes. Installations made with the earlier separate scripts remain removable with this combined script.
 
-If someone edits the managed defaults block or generated loader, the operation stops before writing anything. The ownership record contains the original generated block. Reconcile the edit with that record before retrying. Installer switching also refuses to overwrite runtime files you modified. It never deletes another theme directory.
+If only the `GRUB_THEME`, `GRUB_FONT` or `GRUB_GFXMODE` lines have been removed from an otherwise intact managed block, the installer handles this automatically. Install, switch and rollback recreate the block; uninstall removes it. Settings outside the block remain intact. Dry runs show the proposed changes, and failed configuration generation restores the files as they were before the operation.
+
+Other edits inside the managed defaults block, including changed values, stop the operation before writing anything. Edits to the generated loader also stop the operation. The ownership record contains the original generated block. Reconcile conflicting edits with that record before retrying. Installer switching also refuses to overwrite runtime files you modified. It never deletes another theme directory.
 
 ## Hardware observations
 

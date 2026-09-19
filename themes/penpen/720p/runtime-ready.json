@@ -15,7 +15,7 @@
     "README.md": "20e1d074364e1997394ebd166ecc0d76dce66afaa50d3a762771e95815d3a9f5",
     "background.png": "530ce050b07f7b43cda77baedae39de0ee22e839de03ccc507893fce598c432e",
     "fonts/penpen-720p-menu.pf2": "0bcc9632b14c8d789a537d46cd5bc42f6738fdc9000f20d52d74a71559f956ca",
-    "fonts/penpen-720p-timer.pf2": "87fbd4cd00616329e4c0c8bf29c9b156086559d6e01652c081e0c5134afc73d3",
+    "fonts/penpen-720p-timer.pf2": "0312f1aa38c36e5bbffac9db3a538612d763a91c04e823749e7798eae7f60ab1",
     "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
     "progress/cell-01.png": "f9b453acde067521977dc66a151c7439d2a45b5363e319aacb2ed7b1d7ab8102",
     "progress/cell-02.png": "09e7e61db2aad86463c93cd7edf2c5d1be2cfd715a6935fc2eb6f9d0062a317a",
@@ -24,20 +24,18 @@
     "progress/cell-05.png": "21c2747edb41ee74f747223411c8c0de83f092e8eeb48e7a264070d452df7ff0",
     "progress/timer-mask.png": "a378f668cad298d0cadbe04516b4bfbbc460d1aeb998e4eaaa3821c6c219b537",
     "progress/transparent.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
-    "selectors/item_c.png": "ea4494142ba8f84f157826a51aeae9e3fccd5c1ceb12dedd2926e07bdf8481b0",
     "selectors/item_e.png": "c066224acacb3d59f065fe35092f3982fc08ab393aa64c0a1d949580ee98223a",
     "selectors/item_w.png": "eec2190a6021ae3770cf9f80789e6eb87eba67ad490b5671ce2c7332f3d82dd8",
-    "selectors/menu_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
     "selectors/scrollbar_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
     "selectors/selected_c.png": "1db570e3989576c28ccb6858d6d35ed110df0e088277fc03ab7ce122ae906f40",
     "selectors/selected_e.png": "c066224acacb3d59f065fe35092f3982fc08ab393aa64c0a1d949580ee98223a",
     "selectors/selected_w.png": "2e2e94c7a172a443ae08404ec3ec09c5eb701506301fa4ded5251769ded0bdca",
     "selectors/thumb_c.png": "f2043326260b351a12ef53b222b2500a342901ec8249a9bc6651e3c706911728",
-    "theme.txt": "3fffa8d81f75d92709d99985833c69a8632662749c64f1db63a2368be54e7e0e"
+    "theme.txt": "dc1729e369cfdfad9e94ba70dee21deb246ac4673c31dff3f109b66d00b2f894"
   },
   "verification": {
-    "date": "2026-09-15",
-    "environment": "QEMU TCG, OVMF x86-64 UEFI, stock GRUB 2.14",
+    "date": "2026-09-19",
+    "environment": "QEMU TCG / OVMF / stock GRUB 2.14; Soryu horizontal navigation also checked with GRUB 2.12 and SeaBIOS",
     "scenarios": [
       "auto",
       "fallback",

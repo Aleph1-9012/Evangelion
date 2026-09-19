@@ -166,7 +166,7 @@ font_name() {
 
 validate_references() {
     local -n resources=$1
-    local path relative name header line key value pattern suffix rest count i card_host=0 modules=0
+    local path relative name header line key value suffix rest count i card_host=0 modules=0
     local -A names=() images=()
     local property='^[[:space:]]*([A-Za-z_][A-Za-z0-9_-]*)[[:space:]]*[:=][[:space:]]*(.*)$'
     local quoted='^"([^"]*)"' unquoted='^([^[:space:]#}]+)'
@@ -175,13 +175,13 @@ validate_references() {
         case $path in
             *.pf2) name=$(font_name "${resources[$path]}") || die 'Invalid runtime font'; names["$name"]=1;;
             *.png)
-                header=$(od -An -tx1 -N8 -- "${resources[$path]}" | tr -d ' \n')
-                [[ $header == 89504e470d0a1a0a ]] || die "Runtime PNG has an invalid signature: $path"
+                IFS= read -r -d '' -n 8 header < "${resources[$path]}" || die "Truncated PNG: $path"
+                [[ $header == $'\x89PNG\r\n\x1a\n' ]] || die "Runtime PNG has an invalid signature: $path"
                 images["${path#"$RUNTIME/"}"]=1;;
             *.mod)
                 modules=$((modules + 1))
-                header=$(od -An -tx1 -N4 -- "${resources[$path]}" | tr -d ' \n')
-                [[ $header == 7f454c46 ]] || die "Invalid native GRUB module: $path";;
+                IFS= read -r -d '' -n 4 header < "${resources[$path]}" || die "Truncated module: $path"
+                [[ $header == $'\x7fELF' ]] || die "Invalid native GRUB module: $path";;
         esac
     done
     ((${#images[@]} && ${#names[@]})) || die 'Ready theme needs PNG artwork and PF2 fonts'
@@ -195,16 +195,17 @@ validate_references() {
                 [[ -n $value && -v images[$value] ]] || die "Missing or unsupported theme image reference: $key=$value";;
             item_pixmap_style|selected_item_pixmap_style|menu_pixmap_style|scrollbar_frame|scrollbar_thumb|bar_style|highlight_style)
                 [[ $value =~ ^[A-Za-z0-9_./-]+_\*\.png$ ]] || die "Unsupported styled-box reference: $value"
-                pattern=${value/\*/c}
-                [[ -v images[$pattern] ]] || die "Missing center slice: $value"
+                count=0
                 for relative in "${!images[@]}"; do
                     # The generated styled-box reference is a validated glob.
                     # shellcheck disable=SC2053
                     if [[ $relative == $value ]]; then
                         suffix=${relative#"${value%\**}"}; suffix=${suffix%.png}
                         case $suffix in c|n|s|e|w|nw|ne|sw|se) ;; *) die "Invalid styled-box slice: $relative";; esac
+                        count=$((count + 1))
                     fi
-                done;;
+                done
+                ((count)) || die "Missing styled-box slices: $value";;
             font|item_font|selected_item_font|title-font|message-font|terminal-font)
                 [[ -n $value && -v names[$value] ]] || die "Theme font is not present in the packaged PF2 files: $value";;
         esac
@@ -244,12 +245,24 @@ validate_references() {
 # Keep the existing JSON installation format, parsed as data by state-data.awk.
 hash_map() {
     local -n entries=$1
-    local path digest
+    local path item i
+    local -a keys=() inputs=()
     for path in "${!entries[@]}"; do
-        digest=$(sha "${entries[$path]}") || return 1
-        printf '%s\t%s\n' "$path" "$digest"
-    done |
-        record hash-map
+        keys+=("$path"); inputs+=("${entries[$path]}")
+    done
+    # Bound each invocation and keep file names unambiguous, even outside the source tree.
+    {
+        for ((i=0; i<${#inputs[@]}; i+=256)); do
+            sha256sum --zero -- "${inputs[@]:i:256}" || return 1
+        done
+    } | {
+        i=0
+        while IFS= read -r -d '' item; do
+            printf '%s\t%s\n' "${keys[$i]}" "${item:0:64}"
+            i=$((i + 1))
+        done
+        ((${#keys[@]} == i))
+    } | record hash-map
 }
 
 source_files() {

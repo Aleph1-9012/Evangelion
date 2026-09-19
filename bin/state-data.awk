@@ -158,7 +158,17 @@ BEGIN {
         } else {
             block = value(id, "block")
             start = index(text, block)
-            expect(starts == 1 && ends == 1 && start > 0, "Managed defaults were edited; restore the recorded block before continuing")
+            conflict = "Managed defaults were edited; restore the recorded block before continuing"
+            expect(starts == 1 && ends == 1, conflict)
+            if (! start) {
+                marker = substr(block, 1, index(block, "\n"))
+                start = (marker != "" ? index(text, marker) : 0)
+                end = index(text, args[5] "\n")
+                expect(start > 0 && end > start, conflict)
+                actual = substr(text, start, end + length(args[5]) + 1 - start)
+                expect(theme_settings_removed(actual, block), conflict)
+                block = actual
+            }
             suffix = substr(text, start + length(block))
             end = start - 1
             if (value(id, "added_newline") == "true" && end > 0 && substr(text, end, 1) == "\n" && (suffix == "" || substr(suffix, 1, 1) == "\n")) {
@@ -171,6 +181,25 @@ BEGIN {
         fail("Unknown record operation: " op)
     }
     exit
+}
+
+function theme_settings_removed(actual, recorded, lines, n, i, line, pos)
+{
+    # Theme tools can remove these assignments. All other owned text must match.
+    n = split(recorded, lines, "\n")
+    if (lines[n] != "") {
+        return 0
+    }
+    pos = 1
+    for (i = 1; i < n; i++) {
+        line = lines[i] "\n"
+        if (substr(actual, pos, length(line)) == line) {
+            pos += length(line)
+        } else if (lines[i] !~ /^GRUB_(THEME|FONT|GFXMODE)=/) {
+            return 0
+        }
+    }
+    return pos == length(actual) + 1
 }
 
 function choice(id, runtime)

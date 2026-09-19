@@ -27,7 +27,6 @@ terminal-border: "0"
   item_icon_space = 103
   item_pixmap_style = "selectors/item_*.png"
   selected_item_pixmap_style = "selectors/selected_*.png"
-  menu_pixmap_style = "selectors/menu_*.png"
   scrollbar = true
   scrollbar_width = 2
   scrollbar_frame = "selectors/scrollbar_*.png"

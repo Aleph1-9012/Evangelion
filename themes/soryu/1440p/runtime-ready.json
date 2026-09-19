@@ -22,7 +22,7 @@
     "fonts/soryu-1440p-index.pf2": "00fdd777a3849bba18c54d3ded7c2bcc5878d61eb63adac473ab1283ea5ef8b0",
     "fonts/soryu-1440p-menu.pf2": "0e41daaa98730e06f54fa21206cee18c44d739fab2aa84d8f06966bb95ce64a8",
     "fonts/soryu-1440p-selected.pf2": "44720040abfefdd0a5ebbaa01a57da6a63f95d9bffd120aea545247bd8cc8ad7",
-    "fonts/soryu-1440p-timer.pf2": "9e2b654fbdc6de6914d519309d415deb8fb7f35c8769b82c7a4933a1e1d15fb0",
+    "fonts/soryu-1440p-timer.pf2": "ea193bce7e165a807e367a9fa1966c0f05bdd0c7ce53ba321d7e9cda9478892b",
     "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
     "modules/i386-pc/evangelion_cards.mod": "242dd1ef0c04dc773e3286fb7ed1f41e163b55929508b7cd71e62adc0c964a77",
     "modules/x86_64-efi/evangelion_cards.mod": "c7f25cb67de8bc507922dc94a02a5b7de738a15d4492d5eff06a11d1de3bd484",
@@ -31,17 +31,20 @@
     "theme.txt": "cdd758bda167814d84ad5c984fd3a3eac3ce6edd8f28f66f2c7c6cbe231b89c5"
   },
   "verification": {
-    "date": "2026-09-15",
-    "environment": "QEMU: GRUB 2.12 and 2.14 x86-64 UEFI; GRUB 2.14 PC BIOS; horizontal arrows, entry 10 boot, console/editor and theme-switch restoration",
+    "date": "2026-09-19",
+    "environment": "QEMU TCG / OVMF / stock GRUB 2.14; Soryu horizontal navigation also checked with GRUB 2.12 and SeaBIOS",
     "scenarios": [
       "auto",
       "horizontal",
       "manual",
       "navigate",
-      "three"
+      "three",
+      "uki"
     ],
     "graphics_modes": [
-      "2560x1440"
+      "2560x1440",
+      "2560x1600",
+      "3840x2160"
     ],
     "boot_handoff": "Shared installer and console helper; visible Linux boot messages; no added delay."
   }

@@ -13,9 +13,9 @@
   },
   "sha256": {
     "README.md": "76d73c45781a5dd2c7647906cf68f01959e9c3aa72e4c43d52dca173a60c9045",
-    "background.png": "7b6999f075555798916b18b8253ceb2d39bca90f3b76ba1d9ee992d4027234ad",
+    "background.png": "1779616f6c55ec173974ef3aae06f64a7afecd42e41c149823e50545d4ac066d",
     "fonts/seele-1080p-menu.pf2": "b16546e5a071ef94f5ea75b19c4aef72e6cf3c461ebb137226b31b57011a7e9b",
-    "fonts/seele-1080p-timer.pf2": "32611ab170e740a95dd08d19bbc69d4367ba496361f31ad8fc01d62049a53840",
+    "fonts/seele-1080p-timer.pf2": "a1e7a6fd6d5d7b106e56c24f618913cedc61f951f9183895e1c3295bc4d4eb9a",
     "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
     "icons/evangelion-index-01.png": "cdb9428640e3a698d4d5557c16250f5d581e53c6d7b69d171dc14b70f3925f27",
     "icons/evangelion-index-02.png": "c89394c9b969d44e677f91098f49c733e18a1a7a03988f2191de16802fbc4b93",
@@ -132,22 +132,21 @@
     "progress/cover-06.png": "03fba799958b0d367fa1311de57b9f1496aca78fc0507462f4acccff6bfda841",
     "progress/cover-07.png": "5a212836459424aa62e666987570a12ee2731aa555299b1c87225ef33f3e880e",
     "progress/timer-base.png": "7c9a08dcf870d33c1da5b7f7ed63afe7b3b9fe17ac77cba58305b837daed8d34",
-    "progress/timer-mask.png": "597f43a9505012a0d0387d3032b6f9502e178c23b775bfdfc99f4502e2f17dab",
+    "progress/timer-mask.png": "748b0c2151e708644a268dccbb6dafadc3e7977ce1cf07804d8b77f2a30b6459",
     "progress/transparent.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
     "selectors/item_c.png": "0eecc04ad30bc44a16bfe75ab91f0521a96cbc5ad94244bdf958798f08fccf43",
     "selectors/item_e.png": "d28c50b4c4ad5f1ad691f227a05fe3d99d758c69867ad49000a9b4197b233491",
     "selectors/item_w.png": "6545f0bb868066d4e1f17c553bc9189d0483ff928dc045c75cd255be164551e4",
-    "selectors/menu_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
     "selectors/scrollbar_c.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
     "selectors/selected_c.png": "3145d9d1c620346ece829ecfd78c31294f7c281c307c016e870e07a01b3ba520",
     "selectors/selected_e.png": "848b4860138c5c5680a529e5e47b19e4edcd71fe761a6e6ec227448a69768539",
     "selectors/selected_w.png": "6545f0bb868066d4e1f17c553bc9189d0483ff928dc045c75cd255be164551e4",
     "selectors/thumb_c.png": "83b420fdb9f43ed2fb497b5750ff46db1888b501bd81198f1c4fc35e933ef84d",
-    "theme.txt": "5d209fa2d4555baf603ff8f32a48f5c56f779e634cd3d1843a180a5913b3302c"
+    "theme.txt": "ad65778078801c106e84a7c3ad3420a95a9adbd9ce89e97a32a9ece1e5e4c7d0"
   },
   "verification": {
-    "date": "2026-09-15",
-    "environment": "QEMU TCG, OVMF x86-64 UEFI, stock GRUB 2.14",
+    "date": "2026-09-19",
+    "environment": "QEMU/OVMF, stock GRUB 2.14 x86_64-efi; refreshed supplied SEELE artwork with optimized runtime assets",
     "scenarios": [
       "auto",
       "manual",
