@@ -22,6 +22,7 @@
                         name = "evangelion-grub-theme";
                         src = "${self}";
                         installPhase = ''
+                            mkdir -p $out
                             cp -r themes/* $out
                         '';
                     };
