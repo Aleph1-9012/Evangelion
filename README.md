@@ -52,6 +52,49 @@ Larger display modes can use the 1440p design centered with padding. See the [in
 
 Selecting an OS switches to a full-screen console with live boot messages. This is the default for every theme and works with stock GRUB. See [boot behaviour and compatibility](docs/BOOT_CONSOLE.md).
 
+### NixOS
+
+#### Flake
+
+```nix
+
+# flake.nix
+{
+  inputs = {
+    evangelion-grub-theme.url = "github:Aleph1-9012/Evangelion";
+  };
+
+  outputs = { nixpkgs, ... }@inputs: {
+    nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
+      modules = [
+        # ...
+        inputs.evangelion-grub-theme.nixosModules.default
+      ];
+    };
+  };
+}
+
+# configuration.nix
+{
+  boot.loader.grub = {
+    enable = true;
+    gfxmodeEfi = "1920x1080";
+    gfxpayloadEfi = "keep";
+    evangelion-grub-theme = {
+      enable = true;
+      # choose style/theme version
+      # one of [ "ayanami" "eva01" "eva02" "penpen" "ramiel" "seele" "soryu" "wunder" ]
+      # default: "ayanami"
+      style = "seele";
+      # choose theme resolution
+      # one of [ "720p" "1080p" "1440p" ]
+      # default: "1080p"
+      resolution = "1080p";
+    };
+  };
+}
+```
+
 ## Switch themes
 
 Run this from any folder:
