@@ -22,8 +22,7 @@
                         name = "evangelion-grub-theme";
                         src = "${self}";
                         installPhase = ''
-                            mkdir -p $out/themes
-                            cp -r themes/* $out/themes
+                            cp -r themes/* $out
                         '';
                     };
                 in
@@ -68,8 +67,8 @@
                         environment.systemPackages = [ evangelion-grub-theme ];
 
                         boot.loader.grub = {
-                            theme = "${evangelion-grub-theme}/themes/${cfg.style}/${cfg.resolution}";
-                            splashImage = "${evangelion-grub-theme}/themes/${cfg.style}/${cfg.resolution}/background.jpg";
+                            theme = "${evangelion-grub-theme}/${cfg.style}/${cfg.resolution}";
+                            splashImage = "${evangelion-grub-theme}/${cfg.style}/${cfg.resolution}/background.jpg";
                         };
                     };
                 };
