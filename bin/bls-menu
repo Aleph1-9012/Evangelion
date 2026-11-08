@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
+# Build a checked Fedora type-1 BLS snapshot. Exit 2 requests the native menu.
+set -Eeuo pipefail
+export LC_ALL=C
+here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+(($# == 3)) || exit 1
+root=$1 grub_dir=$2 output=$3
+directory=${root%/}/boot/loader/entries
+[[ -d $directory && ! -L $directory ]] || exit 2
+[[ $(realpath -e -- "$directory") == "$directory" ]] || exit 2
+command_path() {
+    command -v "grub-$1" || command -v "grub2-$1"
+}
+probe=$(command_path probe) || exit 2
+relpath=$(command_path mkrelpath) || exit 2
+uuid=$("$probe" --target=fs_uuid "$directory") || exit 2
+path=$("$relpath" "$directory") || exit 2
+[[ $uuid =~ ^[A-Za-z0-9-]+$ && $path =~ ^/[A-Za-z0-9_./@+-]+$ ]] || exit 2
+[[ /${path#/}/ != */../* ]] || exit 2
+stamp=$(stat -c %Y -- "$directory")
+# GRUB compares whole-second mtimes. Finish the snapshot in a later second so
+# a subsequent kernel addition cannot share the directory's recorded second.
+if ((stamp >= $(date +%s))); then sleep 1; fi
+((stamp < $(date +%s))) || exit 2
+shopt -s nullglob
+files=("$directory"/*.conf)
+((${#files[@]} && ${#files[@]} <= 1000)) || exit 2
+mkdir -p -- "$output/files"
+inputs=$(mktemp -d "${output%/*}/bls-inputs-XXXXXXXX")
+trap 'rm -rf -- "$inputs"' EXIT
+index=0
+for file in "${files[@]}"; do
+    name=${file##*/}
+    [[ -f $file && ! -L $file && $name =~ ^[A-Za-z0-9_+.~:-]+\.conf$ ]] || exit 2
+    (($(stat -c %s -- "$file") <= 1048576)) || exit 2
+    cp -- "$file" "$inputs/$name"
+    printf -v number '%04d' "$((++index))"
+    cp -- "$inputs/$name" "$output/files/$number.conf"
+done
+awk -f "$here/bls-menu.awk" "$inputs"/*.conf > "$output/entries.cfg" || exit 2
+checker=$(command_path script-check) || exit 2
+"$checker" "$output/entries.cfg" >/dev/null 2>&1 || exit 2
+# Detect writes during the snapshot as well as during boot.
+[[ $(stat -c %Y -- "$directory") == "$stamp" ]] || exit 2
+current=("$directory"/*.conf)
+[[ ${files[*]} == "${current[*]}" ]] || exit 2
+for file in "${files[@]}"; do cmp -s -- "$file" "$inputs/${file##*/}" || exit 2; done
+printf '%s\n' "$stamp" > "$output/stamp"
+printf '0\n' > "$output/unequal"
+cat > "$output/guard.cfg" <<EOF
+# Verify both the comparison command and the live BLS records before use.
+set eva_bls_valid=0
+set eva_bls_device=
+set eva_bls_cmp_ready=0
+insmod cmp
+if cmp "\$prefix/themes/evangelion/bls/stamp" "\$prefix/themes/evangelion/bls/stamp"; then
+  if cmp "\$prefix/themes/evangelion/bls/stamp" "\$prefix/themes/evangelion/bls/unequal"; then
+    set eva_bls_cmp_ready=0
+  else
+    set eva_bls_cmp_ready=1
+  fi
+fi
+search --no-floppy --fs-uuid --set=eva_bls_device $uuid
+set eva_bls_path="(\$eva_bls_device)$path"
+if [ -n "\$eva_bls_device" -a "\$eva_bls_cmp_ready" = 1 ]; then
+  set eva_bls_valid=1
+fi
+if [ "\$root" != "\$eva_bls_device" ]; then set eva_bls_valid=0; fi
+if [ -n "\$early_initrd" -o -n "\$devicetree" ]; then set eva_bls_valid=0; fi
+if [ -n "\$superusers" -o -f "\$prefix/user.cfg" ]; then set eva_bls_valid=0; fi
+if [ -n "\$blsdir" -a "\$blsdir" != "$path" -a "\$blsdir" != "${path#/}" ]; then set eva_bls_valid=0; fi
+if [ "\$eva_bls_path" -nt "\$prefix/themes/evangelion/bls/stamp" -o "\$eva_bls_path" -ot "\$prefix/themes/evangelion/bls/stamp" ]; then set eva_bls_valid=0; fi
+EOF
+index=0
+for file in "${files[@]}"; do
+    printf -v number '%04d' "$((++index))"
+    printf 'if cmp "$eva_bls_path/%s" "$prefix/themes/evangelion/bls/files/%s.conf"; then [ 1 = 1 ]; else set eva_bls_valid=0; fi\n' "${file##*/}" "$number" >> "$output/guard.cfg"
+done

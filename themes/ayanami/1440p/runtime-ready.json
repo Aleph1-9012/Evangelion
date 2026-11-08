@@ -12,8 +12,9 @@
     "timer": "Evangelion ayanami-1440p-timer Regular 41"
   },
   "sha256": {
-    "README.md": "6f2cea6445a588d4659654c9f7f2394e27b63e47a897fe50345daf490e741dcc",
+    "README.md": "ffc0172714cbeec3621c2c8ddd6d7f72ffcbe819f2af753487afc41d98c3d4ff",
     "background.png": "f8c33d6ab4d1fe0aa1d16d94f103e4df85860b77056baa5b29a79ea359e62506",
+    "desktop.png": "d28905e74c7acd06a62c15a387137e38c5b53145b84b3fdd3005c14e8d6e24f1",
     "fonts/ayanami-1440p-menu.pf2": "70d58e50dd7a4440b01d38dd330e3bca9b69c3c7bb607f57ee0b2a390ad38da3",
     "fonts/ayanami-1440p-timer.pf2": "870bc6de14a72e8da54239c3ad130615a0b79660347d3d340d21d59358addb9f",
     "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
@@ -134,11 +135,11 @@
     "selectors/selected_e.png": "ae07585f2a212a3ade1fc7180bfd920b1329c86dfa679e3dd03ddb51439e3554",
     "selectors/selected_w.png": "ddcdd166f4894cc09f80c51dc195525df4f18a3203303f2326ce9c0b0ef1546b",
     "selectors/thumb_c.png": "c1650f919ee993386134be3e06732725260386abf62353eaceede3edabef85c6",
-    "theme.txt": "7a4c772aca8661cd74d0fee57eb3edac16747144427b5c4acd271aa910217961"
+    "theme.txt": "e44fc6b0f5040e4ddda01f980d2ca3e709cbca9a5c0fc8a6cc62fcb68524240b"
   },
   "verification": {
-    "date": "2026-09-19",
-    "environment": "QEMU/OVMF, stock GRUB 2.14, Linux and UKI console handoff",
+    "date": "2026-11-08",
+    "environment": "QEMU/OVMF, stock GRUB 2.14; Debian and Fedora GRUB 2.12 compatibility coverage",
     "scenarios": [
       "auto",
       "manual",

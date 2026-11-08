@@ -13,8 +13,9 @@
     "selected": "Evangelion ramiel-1080p-selected Regular 24"
   },
   "sha256": {
-    "README.md": "8d8276143a318228586e2e2edb6f6a36f5e05af3fe25c405e496ed567a0d13a8",
+    "README.md": "ea6c761d5178cc5f208b62e17b5ae795a1d5b499fe3afad9e111f4fb7bb12920",
     "background.png": "b785f13736e22f39ca64c22855c4f421de8d4dac7cc49ea264b3514c0d6fa724",
+    "desktop.png": "aed8cd34ac9008992bb412f9a13d67d408780b2a095ba32272513b634cdc61e8",
     "fonts/ramiel-1080p-menu.pf2": "9109d2cadb665a4d1a6f4587fb3bb3fd3010596f39cae8d534bd1eb9aef44034",
     "fonts/ramiel-1080p-selected.pf2": "d8fb8984c45002d10e1f6e36c5b3a0f55c84ecd23a2307b83ac91ad15ed558b1",
     "fonts/ramiel-1080p-timer.pf2": "dd08ac75cad2816df1d27cb41c365014a8a48b0c8467c8baebb65a1d21cb8189",
@@ -29,11 +30,11 @@
     "selectors/selected_e.png": "40fbaa792113f42473de653249e4d512992a6f91ef3533e45c42e42e9f55bd5f",
     "selectors/selected_w.png": "6a5b6eed835f4515e5bf2bef5485399d7e3d6481f97873ac5378a8c14c0b970d",
     "selectors/thumb_c.png": "edce6e3ea5a984b18b7f6e4bb63fa726195273e5a8cce45360bcd249d3f33df3",
-    "theme.txt": "4c3363396895de51bcfa958ce0b07876b224c4e27b185524aac8b58bb674a6a9"
+    "theme.txt": "9916d6fce9ad4d5321743de99c80e142864c39d1b79f1df0b4392d23950033fd"
   },
   "verification": {
-    "date": "2026-09-19",
-    "environment": "QEMU TCG / OVMF / stock GRUB 2.14; Soryu horizontal navigation also checked with GRUB 2.12 and SeaBIOS",
+    "date": "2026-11-08",
+    "environment": "QEMU/OVMF, stock GRUB 2.14; Debian and Fedora GRUB 2.12 compatibility coverage",
     "scenarios": [
       "auto",
       "manual",

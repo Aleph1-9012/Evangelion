@@ -12,8 +12,9 @@
     "timer": "Evangelion seele-1080p-timer Regular 38"
   },
   "sha256": {
-    "README.md": "76d73c45781a5dd2c7647906cf68f01959e9c3aa72e4c43d52dca173a60c9045",
+    "README.md": "a5be81abea62eca3b7a469e58257e3c63fe5a7124e33ab3a037c5d373fde8cc8",
     "background.png": "1779616f6c55ec173974ef3aae06f64a7afecd42e41c149823e50545d4ac066d",
+    "desktop.png": "ea246b9cd8927e0efe8371d85694bd14c6c35ac558e65c49b8ced8cf68b1e575",
     "fonts/seele-1080p-menu.pf2": "b16546e5a071ef94f5ea75b19c4aef72e6cf3c461ebb137226b31b57011a7e9b",
     "fonts/seele-1080p-timer.pf2": "a1e7a6fd6d5d7b106e56c24f618913cedc61f951f9183895e1c3295bc4d4eb9a",
     "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
@@ -142,11 +143,11 @@
     "selectors/selected_e.png": "848b4860138c5c5680a529e5e47b19e4edcd71fe761a6e6ec227448a69768539",
     "selectors/selected_w.png": "6545f0bb868066d4e1f17c553bc9189d0483ff928dc045c75cd255be164551e4",
     "selectors/thumb_c.png": "83b420fdb9f43ed2fb497b5750ff46db1888b501bd81198f1c4fc35e933ef84d",
-    "theme.txt": "1db783ef59e9c4e34cd9d3319a4f187540d25e1fcf91b408a30c57e369818fa5"
+    "theme.txt": "9c9d20df3d51ebca785ade17d7b55aaf4469028f6e8c5d16bd17712afeaa24d3"
   },
   "verification": {
-    "date": "2026-09-19",
-    "environment": "QEMU/OVMF, stock GRUB 2.14, Linux and UKI console handoff",
+    "date": "2026-11-08",
+    "environment": "QEMU/OVMF, stock GRUB 2.14; Debian and Fedora GRUB 2.12 compatibility coverage",
     "scenarios": [
       "auto",
       "manual",

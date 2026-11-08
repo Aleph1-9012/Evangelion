@@ -5,9 +5,11 @@ BEGIN {
     root = ARGV[1]
     numbered = ARGV[2]
     helper = ARGV[3]
+    bls_snapshot = ARGV[4]
     delete ARGV[1]
     delete ARGV[2]
     delete ARGV[3]
+    delete ARGV[4]
     marker = "# Evangelion console handoff v1"
     split("quiet splash rhgb loglevel systemd.show_status rd.systemd.show_status rd.udev.log_level udev.log_level vt.global_cursor_default plymouth.enable rd.plymouth disablehooks", keys, " ")
     for (i in keys) {
@@ -18,12 +20,50 @@ BEGIN {
     if ((getline source) < 0) {
         fail("Cannot read generated menu.")
     }
-    result = transform(source)
+    result = transform(expand_bls(source))
     if (numbered == 1) {
         result = number_entries(result)
     }
     printf "%s", result
     exit
+}
+
+function expand_bls(text, i, j, command_start, count, starts, ends, depth, nested, contents, status, replacement, before)
+{
+    tokenize(text)
+    nc = 0
+    command_start = 1
+    for (i = 1; i <= nt; i++) {
+        if (tk[i] == "{") { depth++; command_start = 1; continue }
+        if (tk[i] == "}") { depth--; command_start = 1; continue }
+        if (tk[i] == "\n" || tk[i] == ";") { command_start = 1; continue }
+        if (command_start && !td[i] && tv[i] ~ /^(if|elif|then|else|do|!)$/) continue
+        if (command_start && !td[i] && tv[i] == "blscfg") {
+            before = substr(text, 1, ts[i]-1)
+            if (before !~ /# Evangelion native BLS\n[ \t]*$/) {
+                if (bls_snapshot == "") fail("Runtime BLS requires the managed snapshot loader.")
+                starts[++count] = ts[i]
+                j = i+1
+                while (j <= nt && tk[j] == "word") j++
+                ends[count] = te[j-1]
+                if (depth || j != i+1) nested = 1
+            }
+        }
+        command_start = 0
+    }
+    if (!count) return text
+    status = (getline contents < (bls_snapshot "/entries.cfg"))
+    close(bls_snapshot "/entries.cfg")
+    if (count == 1 && !nested && status > 0) {
+        replacement = "# Evangelion checked BLS v1\nset eva_bls_valid=0\nsource \"$prefix/themes/evangelion/bls/guard.cfg\"\nif [ \"$eva_bls_valid\" = 1 ]; then\n" contents "\nelse\n  set eva_bls_native=1\n  # Evangelion native BLS\n  blscfg\nfi"
+        change(starts[1], ends[1], replacement)
+        return "set eva_bls_native=0\n" apply(text)
+    }
+    # Keep every original BLS command when its arguments or records are not
+    # representable. The managed late loader selects the native console menu.
+    for (i = 1; i <= count; i++)
+        change(starts[i], starts[i], "# Evangelion native BLS\n")
+    return "set eva_bls_native=1\n" apply(text)
 }
 
 function add_token(start, end, raw, val, kind, dynamic)
@@ -287,7 +327,7 @@ function transform(text, i, pending, depth, command_start, entry_count, token, j
             pending = token
         }
         if (command_start && token == "blscfg") {
-            fail("Runtime BLS menus are not supported by console handoff. Use generated GRUB menu entries.")
+            if (bls_snapshot == "") fail("Runtime BLS requires the managed snapshot loader.")
         }
         in_entry = 0
         for (k = 1; k <= depth; k++) {

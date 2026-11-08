@@ -24,6 +24,7 @@ BOOT_RUNTIME=var/lib/evangelion-grub/boot
 BOOT_HELPER=$BOOT_RUNTIME/boot-console
 BOOT_PARSER=$BOOT_RUNTIME/boot-console.awk
 BOOT_PROXY=$BOOT_RUNTIME/grub.d/00_console
+KERNEL_HOOK=etc/kernel/install.d/99-zz-evangelion.install
 BEGIN='# BEGIN EVANGELION GRUB (managed; use install.sh --uninstall)'
 # Recognize blocks written before install and uninstall shared one entry point.
 LEGACY_BEGIN='# BEGIN EVANGELION GRUB (managed; use uninstall.sh)'
@@ -105,7 +106,8 @@ validate_hashes() {
     while IFS=$'\t' read -r path _; do
         [[ -n $path ]] || continue
         safe_path "$ROOT" "$path" >/dev/null
-        [[ $path == "$prefix/"* || ( $prefix == "$LIBRARY" && $path == "$COMMAND" ) ]] || die "Unsafe ownership path: $path"
+        [[ $path == "$prefix/"* || ( $prefix == "$LIBRARY" && $path == "$COMMAND" ) ||
+           ( $prefix == "$BOOT_RUNTIME" && $path == "$KERNEL_HOOK" ) ]] || die "Unsafe ownership path: $path"
     done < <(record pairs <<< "$data")
 }
 
@@ -305,6 +307,26 @@ source_files() {
     validate_references FILES
 }
 
+prepare_bls() {
+    local relative status=0 path
+    # Rollback restores the artwork, then prepares entries for today's kernels.
+    for relative in "${!FILES[@]}"; do
+        [[ $relative != "$RUNTIME/bls/"* ]] || unset 'FILES[$relative]'
+    done
+    bash "$EVA_REPO/bin/bls-menu" "$ROOT" "$GRUB_DIR" "$WORK/bls" || status=$?
+    case $status in
+        0)
+            while IFS= read -r -d '' path; do
+                FILES["$RUNTIME/bls/${path#"$WORK/bls/"}"]=$path
+            done < <(find "$WORK/bls" -type f -print0);;
+        2)
+            if [[ -d $ROOT/boot/loader/entries ]]; then
+                printf 'eva: BLS snapshot unavailable; the live native console menu will remain available.\n' >&2
+            fi;;
+        *) die 'Cannot prepare the BLS snapshot';;
+    esac
+}
+
 plan_add() {
     local relative=$1 source=${2:-} path
     path=$(safe_path "$ROOT" "$relative"); regular_or_absent "$path"
@@ -354,7 +376,7 @@ plan_manager() {
     local -A manager_files=()
     load_manager
     if ((!removing)); then
-        for relative in bin/install.sh bin/eva bin/boot-console bin/boot-console.awk bin/state-data.awk bin/grub-generator LICENSE docs/NOTICE.md docs/ADVANCED.md docs/BOOT_CONSOLE.md; do
+        for relative in bin/install.sh bin/eva bin/boot-console bin/boot-console.awk bin/state-data.awk bin/grub-generator bin/bls-menu bin/bls-menu.awk bin/kernel-refresh LICENSE docs/NOTICE.md docs/ADVANCED.md docs/BOOT_CONSOLE.md; do
             path=$(safe_path "$EVA_REPO" "$relative")
             [[ -f $path ]] || die "Missing package file: $relative"
             manager_files["$LIBRARY/$relative"]=$path
@@ -426,6 +448,16 @@ find_grub_command() {
     die "grub-$suffix or grub2-$suffix is required. Install your distribution's GRUB tools."
 }
 
+mkconfig_command() {
+    local executable=$1 help
+    local -n command_line=$2
+    help=$("$executable" --help 2>/dev/null) || die 'Cannot inspect GRUB configuration-generator options'
+    command_line=("$executable")
+    # A theme-only refresh must not rewrite Fedora's per-kernel options.
+    [[ $help != *--no-grubenv-update* ]] || command_line+=(--no-grubenv-update)
+    command_line+=(-o)
+}
+
 strip_block() {
     record strip-block "$ROOT/$DEFAULTS" "$BEGIN" "$LEGACY_BEGIN" "$END" <<< "$STATE_DATA" > "$WORK/base-defaults"
 }
@@ -434,7 +466,7 @@ make_hook() {
     local mode=$1 path
     cat <<HEADER
 #!/bin/sh
-exec tail -n +3 "\$0"
+exec bash $(shell_quote "${ROOT%/}/$BOOT_HELPER") loader "\$0"
 # Evangelion exact-mode loader
 terminal_output console
 unset theme
@@ -457,7 +489,10 @@ HEADER
         # native viewer sets this marker after accepting its configuration.
         cat <<'CARDS'
 unset evangelion_cards_ready
-if [ -f "$prefix/themes/evangelion/modules/$grub_cpu-$grub_platform/evangelion_cards.mod" ]; then
+set eva_cards_supported=0
+if [ "$grub_cpu-$grub_platform" = x86_64-efi ]; then set eva_cards_supported=$eva_cards_efi; fi
+if [ "$grub_cpu-$grub_platform" = i386-pc ]; then set eva_cards_supported=$eva_cards_pc; fi
+if [ "$eva_bls_native" != 1 -a "$eva_cards_supported" = 1 -a -f "$prefix/themes/evangelion/modules/$grub_cpu-$grub_platform/evangelion_cards.mod" ]; then
   insmod "$prefix/themes/evangelion/modules/$grub_cpu-$grub_platform/evangelion_cards.mod"
   set theme="$prefix/themes/evangelion/theme.txt"
   source "$prefix/themes/evangelion/cards.cfg"
@@ -477,12 +512,14 @@ CARDS
         return
     fi
     cat <<'FOOTER'
+if [ "$eva_bls_native" != 1 ]; then
 if terminal_output gfxterm; then
   set theme="$prefix/themes/evangelion/theme.txt"
   export theme
 else
   unset theme
   terminal_output console
+fi
 fi
 FOOTER
 }
@@ -494,6 +531,12 @@ plan_changes() {
     local -A snapshot=() empty=() boot_files=()
     if [[ $ACTION == setup ]]; then plan_manager; return; fi
     load_state
+    if [[ $ACTION == refresh ]]; then
+        [[ $STATE_DATA != null ]] || return 0
+        THEME=$(record get theme <<< "$STATE_DATA")
+        PROFILE=$(record get profile <<< "$STATE_DATA")
+        MODE=$(record get gfxmode <<< "$STATE_DATA")
+    fi
     if [[ $ACTION == uninstall ]]; then
         plan_manager 1
         [[ $STATE_DATA != null ]] || return 0
@@ -522,6 +565,9 @@ plan_changes() {
     boot_files["$BOOT_HELPER"]=$EVA_REPO/bin/boot-console
     boot_files["$BOOT_PARSER"]=$EVA_REPO/bin/boot-console.awk
     boot_files["$BOOT_PROXY"]=$EVA_REPO/bin/grub-generator
+    if [[ -d $ROOT/boot/loader/entries || -d $ROOT/etc/kernel/install.d || -d $ROOT/usr/lib/kernel/install.d ]]; then
+        boot_files["$KERNEL_HOOK"]=$EVA_REPO/bin/kernel-refresh
+    fi
     owned_changes "$(record get boot_files '{}' <<< "$STATE_DATA")" boot_files 0
     boot_hashes=$(hash_map boot_files)
     if [[ $ACTION == rollback ]]; then
@@ -540,11 +586,12 @@ plan_changes() {
         source_files "$THEME" "$PROFILE"
         mode=$(mode_for "$PROFILE" "$MODE" "$WORK/base-defaults")
     fi
+    prepare_bls
     owned_changes "$old_files" FILES 0
     hashes=$(hash_map FILES)
     printf '%s\n' "$hashes" > "$WORK/files.json"
     previous=$old_previous
-    if [[ $STATE_DATA != null ]] && ! record same-choice "$THEME" "$PROFILE" "$mode" "$WORK/files.json" <<< "$STATE_DATA"; then
+    if [[ $ACTION != refresh && $STATE_DATA != null ]] && ! record same-choice "$THEME" "$PROFILE" "$mode" "$WORK/files.json" <<< "$STATE_DATA"; then
         while IFS=$'\t' read -r relative expected; do
             path=$(safe_path "$ROOT" "$relative")
             [[ -f $path ]] || die "Current theme cannot be saved for rollback: /$relative is missing or modified"
@@ -559,6 +606,7 @@ plan_changes() {
     {
         printf '%s\n' "$BEGIN" '# The late loader selects the theme only after the exact mode succeeds.' 'GRUB_THEME=""' 'GRUB_FONT=""' "GRUB_GFXMODE=\"$mode\"" 'GRUB_TIMEOUT_STYLE="menu"'
         printf '%s\n' '# Process the current GRUB generators on every configuration refresh.' 'if [ -n "${grub_mkconfig_dir-}" ]; then' '  export EVANGELION_GRUB_SOURCE_DIR="$grub_mkconfig_dir"'
+        printf '  export EVANGELION_BLS_SNAPSHOT=%s\n' "$(shell_quote "${ROOT%/}/$RUNTIME/bls")"
         if [[ $THEME == ayanami || $THEME == seele ]]; then
             printf '%s\n' '  export EVANGELION_NUMBERED_MENU=1'
         fi
@@ -587,7 +635,10 @@ prune_plan() {
     done
 }
 
-needs_generation() { [[ -v PLAN[$DEFAULTS] || -v PLAN[$HOOK] || -v PLAN[$STATE] ]]; }
+needs_generation() {
+    [[ ( $ACTION == refresh && $STATE_DATA != null ) ||
+       -v PLAN[$DEFAULTS] || -v PLAN[$HOOK] || -v PLAN[$STATE] ]]
+}
 
 display_plan() {
     local relative path source operation status
@@ -626,7 +677,7 @@ remember() {
 }
 
 atomic_write() {
-    local relative=$1 source=$2 override=${3:-} path old mode=644
+    local relative=$1 source=$2 override=${3:-} path old mode=644 stamp
     path=$(safe_path "$ROOT" "$relative") || return 1
     [[ ! -e $path || -f $path ]] || return 1
     old=$WORK/old/${SAVED[$relative]}
@@ -636,6 +687,12 @@ atomic_write() {
     cat -- "$source" > "$ATOMIC_TEMP" || return 1
     if ((EUID == 0)) && [[ -f $old ]]; then chown --reference="$old" -- "$ATOMIC_TEMP" || return 1; fi
     chmod "$mode" -- "$ATOMIC_TEMP" || return 1
+    case $relative in
+        "$RUNTIME/bls/stamp"|"$PREVIOUS/bls/stamp")
+            read -r stamp < "$source"
+            [[ $stamp =~ ^[0-9]{1,12}$ ]] || return 1
+            touch -d "@$stamp" -- "$ATOMIC_TEMP" || return 1;;
+    esac
     sync -f -- "$ATOMIC_TEMP" || return 1
     mv -fT -- "$ATOMIC_TEMP" "$path" || return 1
     ATOMIC_TEMP=
@@ -695,7 +752,7 @@ remove_empty_owned_dirs() {
 apply_changes() {
     local relative mode regenerate=0 checker
     local -a generator=()
-    ((${#PLAN[@]})) || { printf 'Already in the requested state; no changes.\n'; return; }
+    ((${#PLAN[@]})) || needs_generation || { printf 'Already in the requested state; no changes.\n'; return; }
     [[ $ROOT != / || $EUID == 0 ]] || die 'Host installation requires root; inspect --dry-run before running with sudo'
     if needs_generation; then
         regenerate=1
@@ -705,10 +762,11 @@ apply_changes() {
             generator=("$(realpath -e -- "$GENERATOR")" "$ROOT")
         else
             [[ -z $GENERATOR ]] || die '--generator is available only with a staging --root'
-            generator=("$(find_grub_command mkconfig)" -o)
+            generator=("$(find_grub_command mkconfig)")
             grep -q '^grub_mkconfig_dir=' "${generator[0]}" &&
                 grep -q 'for .*grub_mkconfig_dir' "${generator[0]}" ||
                 die 'This grub-mkconfig does not expose the supported generator directory'
+            mkconfig_command "${generator[0]}" generator
         fi
         # Test the boot destination before changing defaults or runtime files.
         CANDIDATE=$(mktemp "${ROOT%/}/$GRUB_DIR/.grub.cfg.evangelion-XXXXXX")
@@ -717,14 +775,14 @@ apply_changes() {
     for relative in "${!PLAN[@]}"; do
         [[ $relative != "$STATE" && $relative != "$MANAGER" ]] || continue
         mode=
-        case $relative in "$HOOK"|"$COMMAND"|"$LIBRARY/bin/eva"|"$LIBRARY/bin/install.sh"|"$BOOT_PROXY") mode=755;; "$PREVIOUS/"*) mode=600;; esac
+        case $relative in "$HOOK"|"$COMMAND"|"$LIBRARY/bin/eva"|"$LIBRARY/bin/install.sh"|"$BOOT_PROXY"|"$KERNEL_HOOK") mode=755;; "$PREVIOUS/"*) mode=600;; esac
         transaction_change "$relative" "${PLAN[$relative]}" "$mode"
     done
     if ((regenerate)); then
         "${generator[@]}" "$CANDIDATE" || die "GRUB configuration generation failed"
         if [[ $ACTION != uninstall ]]; then
             # Staging generators need the same transformation as the live proxy.
-            local -a helper_options=()
+            local -a helper_options=(--bls-snapshot "$ROOT/$RUNTIME/bls")
             if [[ $THEME == ayanami || $THEME == seele ]]; then helper_options+=(--numbered); fi
             bash "$ROOT/$BOOT_HELPER" filter "$CANDIDATE" --root "$ROOT" "${helper_options[@]}" > "$WORK/console-config" || die 'Console handoff generation failed'
             cat -- "$WORK/console-config" > "$CANDIDATE"
@@ -737,8 +795,10 @@ apply_changes() {
             tail -n +3 "$ROOT/$HOOK" > "$WORK/expected-loader"
             record contains "$CANDIDATE" "$WORK/expected-loader" || die 'Generated config omitted or changed the Evangelion loader'
         fi
-        transaction_change "$BACKUP" "$ROOT/$CONFIG" 600
-        transaction_change "$CONFIG" "$CANDIDATE"
+        if ! cmp -s -- "$ROOT/$CONFIG" "$CANDIDATE"; then
+            transaction_change "$BACKUP" "$ROOT/$CONFIG" 600
+            transaction_change "$CONFIG" "$CANDIDATE"
+        fi
     fi
     for relative in "$STATE" "$MANAGER"; do
         if [[ -v PLAN[$relative] ]]; then transaction_change "$relative" "${PLAN[$relative]}" 600; fi
@@ -749,6 +809,7 @@ apply_changes() {
         setup) printf 'Evangelion manager installed. Run sudo eva to select a theme.\n';;
         install) printf 'Installation complete.\n';;
         rollback) printf 'Previous Evangelion choice restored.\n';;
+        refresh) printf 'Current boot entries refreshed.\n';;
         uninstall) printf 'Evangelion removed; prior settings restored.\n';;
     esac
 }

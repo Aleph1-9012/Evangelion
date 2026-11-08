@@ -12,8 +12,9 @@
     "timer": "Evangelion wunder-720p-timer Regular 16"
   },
   "sha256": {
-    "README.md": "81d414a77bd2ee4ecab2abe005fdb9ac611f3fc17de21f894dd350e3db2aa43d",
+    "README.md": "e902d68178194512e0d9710812acabc0f9e4841d21bc3ca7edd2fb23599bf352",
     "background.png": "73ecf11a9651920806d7e74ee602695d18484e9a1c0ee53533c87385e89bcda6",
+    "desktop.png": "fa5537f71c10f0b63f967081aba95d42bc4f87238dad0b066aa1a090b8a5d485",
     "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
     "fonts/wunder-720p-menu.pf2": "6cb9be3db34f92cb7dbf6bd4fd790a02d88698e52bbe08898bbaf1a200cdb7f1",
     "fonts/wunder-720p-timer.pf2": "ac7ea98331e79c499b6a9ccd41572e5e1e6aca6a87b1acd0b9dee4e787ad4527",
@@ -29,11 +30,11 @@
     "selectors/selected_e.png": "2a651bd8655e8777d7da6bde9fc3a322c07ba8ced95f758e39228f9e16514ed6",
     "selectors/selected_w.png": "57f76446854865ea95ef7c9ee2eba3fda6af48a563c55730a9ddb3319d0484f1",
     "selectors/thumb_c.png": "c592ab56bedeecee8887f79373db2af0b72a94f5275bcb36ebd803df9b903607",
-    "theme.txt": "4272935919b7b1b315940626d861becf70205fc74c455f4539a09020240ac1cd"
+    "theme.txt": "610b0c9dfee1f42b8442bc0ebc44e821ac247aeb9adba0e1a7cd0b7f4ef76d30"
   },
   "verification": {
-    "date": "2026-09-19",
-    "environment": "QEMU TCG / OVMF / stock GRUB 2.14; Soryu horizontal navigation also checked with GRUB 2.12 and SeaBIOS",
+    "date": "2026-11-08",
+    "environment": "QEMU/OVMF, stock GRUB 2.14; Debian and Fedora GRUB 2.12 compatibility coverage",
     "scenarios": [
       "auto",
       "fallback",

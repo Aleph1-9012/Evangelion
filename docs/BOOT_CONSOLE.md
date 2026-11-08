@@ -17,6 +17,10 @@ terminal-height: "100%"
 terminal-border: "0"
 ```
 
+Each profile also supplies a one-pixel desktop image in its padding color.
+GRUB 2.12 requires this image to avoid a bitmap error when opening submenus.
+The artwork remains a separate, centered image at the profile's native size.
+
 Package the matching terminal font with each profile and refresh its asset hashes. The graphical menu must switch to real console output when an entry starts, with no added delay. Keep this behaviour in the shared boot helper so fixes apply to every theme. Check each new profile's menu and boot handoff in a VM before release.
 
 ## What changes
@@ -31,16 +35,43 @@ For a locally resolvable unified kernel image, or UKI, the helper reads its PE `
 
 ## Compatibility
 
-Requires GNU GRUB with the standard `grub-mkconfig` generator directory, Bash, awk and standard Linux command-line tools. Python and jq are not required. The console behaviour was tested on an Arch Linux host with GRUB 2.14 and a UKI with Secure Boot disabled. The Bash/awk replacement has separate VM and staged installation coverage; a physical reboot with that replacement is still pending. Both `/boot/grub` and `/boot/grub2` installation layouts have staged coverage.
+Requires GNU GRUB with the standard `grub-mkconfig` generator directory, Bash, awk and standard Linux command-line tools. Python and jq are not required. Both `/boot/grub` and `/boot/grub2` installation layouts are supported.
 
 With Secure Boot enabled or unreadable, the helper keeps a UKI's arguments unchanged. The console handoff still happens, but an image with embedded `quiet` or splash settings may hide Linux messages. The installer does not disable Secure Boot or rebuild or sign images. See [systemd-stub](https://man.archlinux.org/man/systemd-stub.7.en) for EFI command-line rules.
 
-The helper processes explicit entries emitted during menu generation. Entries loaded later through `source`, `configfile`, runtime variables or another bootloader may require changes in that source. EFI images that cannot be resolved uniquely on local boot mounts keep their original arguments. Runtime BLS menus using `blscfg` are rejected before installation completes because their entries are absent during generation. Failed installation restores the previous files and configuration.
+The helper processes explicit entries emitted during menu generation. Entries loaded later through `source`, `configfile`, runtime variables or another bootloader may require changes in that source. EFI images that cannot be resolved uniquely on local boot mounts keep their original arguments. Failed installation restores the previous files and configuration.
+
+## Fedora BLS entries
+
+For a standard Fedora type-1 BLS menu, the installer prepares a checked copy
+of `/boot/loader/entries/*.conf`. The generated entries retain their native
+IDs, ordering, access settings, kernel paths and initrd order. Boot arguments
+receive the same display changes described above. The original BLS files
+and their saved kernel options are not edited.
+
+Before using those entries, GRUB loads and checks its `cmp` command, compares
+the live files with the copies and checks the entry directory's timestamp.
+If a kernel was added, removed or edited, the original `blscfg` command
+supplies the live menu in a full-screen console. Unsupported records, BLS
+command arguments, authentication settings or an unavailable comparison
+module also use that native menu. Boot messages in this fallback follow the
+original kernel options, including any quiet or splash settings.
+
+The owned `/etc/kernel/install.d/99-zz-evangelion.install` hook runs after
+kernel additions and removals. It refreshes the checked entries without
+changing the selected theme or the saved rollback choice. If a refresh
+fails, the old checked files remain and GRUB can use the native fallback.
+After manually editing BLS records, run `sudo eva refresh` to update the
+themed menu. Ordinary `grub-mkconfig` runs retain the boot-time checks.
+
+This path supports a single ordinary `blscfg` invocation and Linux type-1
+records in `/boot/loader/entries`. Other BLS layouts retain their native
+menu. It does not disable BLS, rebuild EFI images or change Secure Boot.
 
 This fixes the empty box and frozen-theme wait by showing the boot process. Hardware initialization still takes time. Boot messages and their language depend on the OS; non-Linux systems control their own boot display.
 
 ## Upgrade and removal
 
-Install a theme again from the updated download to activate this behaviour. `sudo ./install.sh --no-apply` updates only the chooser and catalog; it does not change the active boot configuration. The old patch export command and patch payload have been removed from the package. An already patched GRUB installation can use the new handoff without rebuilding GRUB.
+Install a theme again from the updated download to activate this behaviour. `sudo ./install.sh --no-apply` updates only the chooser and catalog; it does not change the active boot configuration until the next `sudo eva refresh`. The kernel-install hook runs that refresh after kernel additions and removals, so on those systems the updated helper takes effect with the next kernel update. The old patch export command and patch payload have been removed from the package. An already patched GRUB installation can use the new handoff without rebuilding GRUB.
 
 `sudo eva uninstall` removes the managed generator override and restores normal generation from the original scripts. It also removes unchanged owned helper files. It preserves unrelated user changes and keeps the previous generated configuration for recovery. See [installation and restoration](ADVANCED.md) for dry runs, ownership checks and rollback.

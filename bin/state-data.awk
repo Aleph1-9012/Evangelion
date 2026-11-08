@@ -288,11 +288,11 @@ function is_hash(text)
     return (length(text) == 64 && text !~ /[^a-f0-9]/)
 }
 
-function json_quote(value, i, c, out, n)
+function json_quote(text, i, c, out, n)
 {
     out = "\""
-    for (i = 1; i <= length(value); i++) {
-        c = substr(value, i, 1)
+    for (i = 1; i <= length(text); i++) {
+        c = substr(text, i, 1)
         if (c == "\\" || c == "\"") {
             out = out "\\" c
         } else if (c == "\n") {
@@ -315,11 +315,11 @@ function json_quote(value, i, c, out, n)
     return (out "\"")
 }
 
-function node(type, value, id)
+function node(type, content, id)
 {
     id = ++jn
     jt[id] = type
-    jv[id] = value
+    jv[id] = content
     return id
 }
 
@@ -419,17 +419,17 @@ function put(id, key, child)
     jc[id, key] = child
 }
 
-function read_file(path, value, status, previous)
+function read_file(path, content, status, previous)
 {
     previous = RS
     RS = "^$"
-    status = (getline value < path)
+    status = (getline content < path)
     close(path)
     RS = previous
     if (status < 0) {
         fail("Cannot read " path)
     }
-    return value
+    return content
 }
 
 function safe_relative(text, n, parts, i)

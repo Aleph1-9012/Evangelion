@@ -4,7 +4,7 @@ Fixed 1920×1080 GRUB canvas, centered with padding on larger modes.
 
 Install through the repository's `install.sh` or `sudo eva` chooser. The loader selects the graphics mode and loads the packaged PF2 fonts.
 
-Runtime files are `theme.txt`, `background.png`, `fonts/`, `selectors/` and `progress/`. The `icons/` directory supplies entry-number badges. `runtime-ready.json` records the files checked by the installer.
+Runtime files are `theme.txt`, `background.png`, `desktop.png`, `fonts/`, `selectors/` and `progress/`. The `icons/` directory supplies entry-number badges. `runtime-ready.json` records the files checked by the installer.
 
 Entries and the countdown come from the existing GRUB configuration. 4 rows are visible; larger menus scroll.
 

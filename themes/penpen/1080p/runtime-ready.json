@@ -12,8 +12,9 @@
     "timer": "Evangelion penpen-1080p-timer Regular 24"
   },
   "sha256": {
-    "README.md": "de39d69b096c0a7814abcb73ea42b710055f21ed23c31fc4d4a777a5a90aebf4",
+    "README.md": "682400e790cfc4ba8ff66e8faffc829d1ad397df6498b3d39aa9ef9c30e7a80d",
     "background.png": "6a2414bfbf22cf77b482aa045fe76f05c1a18eb7db3b95523023332c01394dea",
+    "desktop.png": "1b3d52f66876071f7ee6b1a5a7df4b4745e243a794d56c68fa552497a73166f2",
     "fonts/penpen-1080p-menu.pf2": "56c1f9e0441dedb1e8b87aa6e4055d69987a918be474e4cb8e56fd4cd0bd4e1a",
     "fonts/penpen-1080p-timer.pf2": "506f2f44f88b1d65a1d2e651d524fded78568286b674164ac9f274b959e5e9ad",
     "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
@@ -31,11 +32,11 @@
     "selectors/selected_e.png": "e2cbe913fe435150afdd94bc7d713bc63c424d9b76b4f3aceaba3b6ce29ef630",
     "selectors/selected_w.png": "651f8eca475461e2521da6c11602b535e36f3373da756d4a7d54b10eb8036b56",
     "selectors/thumb_c.png": "f2043326260b351a12ef53b222b2500a342901ec8249a9bc6651e3c706911728",
-    "theme.txt": "9bddfd953299354d048cdf6f55a7063338d6cbcc67c793c0f0d2a3c3a1005d50"
+    "theme.txt": "a4e28ea6ff89ffd5938a5c67727e8e6bfe60c8b283259b1d3632a5e9fdddb4e6"
   },
   "verification": {
-    "date": "2026-09-19",
-    "environment": "QEMU/OVMF, stock GRUB 2.14, Linux and UKI console handoff",
+    "date": "2026-11-08",
+    "environment": "QEMU/OVMF, stock GRUB 2.14; Debian and Fedora GRUB 2.12 compatibility coverage",
     "scenarios": [
       "auto",
       "manual",

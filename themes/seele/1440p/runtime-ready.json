@@ -12,8 +12,9 @@
     "timer": "Evangelion seele-1440p-timer Regular 51"
   },
   "sha256": {
-    "README.md": "ca2911daee2f483a7102899bd77271b4a911d15545d77e656325ed270ef6ea27",
+    "README.md": "66134472c1db36f627c26cb70946399332899c9f7bb0ba519d39f322460d08b3",
     "background.png": "3cb31b87ef3d37eb1523bc0c95ef42450a8001296e327d1bd2b2bcc9ad2093ad",
+    "desktop.png": "ea246b9cd8927e0efe8371d85694bd14c6c35ac558e65c49b8ced8cf68b1e575",
     "fonts/seele-1440p-menu.pf2": "8c59491aafc095bd310d33b362440c1ec238f8feb3c108b84450098a1443858e",
     "fonts/seele-1440p-timer.pf2": "159ee7a6a7ffba4ea7165b161a4249549221889e7a5ebdb0479eab18f02c9579",
     "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
@@ -142,11 +143,11 @@
     "selectors/selected_e.png": "d3b5e52995a082f59dbb64ac8e99e0341fd840db38804eb76becdf68aa0fe4a0",
     "selectors/selected_w.png": "0e27eb189f286c48acba87b091f012db2df5c3fb4934e7d5fb9c176ebc236f35",
     "selectors/thumb_c.png": "83b420fdb9f43ed2fb497b5750ff46db1888b501bd81198f1c4fc35e933ef84d",
-    "theme.txt": "22de8693e41cb5a250c35934b6b1688db0a4a62b69137799c27ce9fe57532c00"
+    "theme.txt": "dcd521a7a745f606e0fa97a8783de88df8db24440511014acd638554f34f5c6d"
   },
   "verification": {
-    "date": "2026-09-19",
-    "environment": "QEMU/OVMF, stock GRUB 2.14, Linux and UKI console handoff",
+    "date": "2026-11-08",
+    "environment": "QEMU/OVMF, stock GRUB 2.14; Debian and Fedora GRUB 2.12 compatibility coverage",
     "scenarios": [
       "auto",
       "manual",

@@ -38,7 +38,9 @@ Eight Evangelion themes for your GRUB boot menu. Each includes 720p, 1080p and 1
 
 Requires **Linux** with **GRUB 2**, **Bash**, **awk** and standard Linux command-line tools. Python and jq are not required.
 
-The installer detects `/boot/grub` or `/boot/grub2` and the available GRUB tools. Tested on Arch Linux with GRUB 2.14.
+The installer detects `/boot/grub` or `/boot/grub2` and the available GRUB tools. Soryu uses the console menu instead of its cards on GRUB 2.16. See the [compatibility details](docs/ADVANCED.md) for supported versions and platforms.
+
+Fedora's BLS boot menus are supported. After a kernel update, the theme refreshes its copy of the boot entries automatically. If you edit the entries yourself, run `sudo eva refresh`. See [Fedora BLS entries](docs/BOOT_CONSOLE.md#fedora-bls-entries).
 
 ```sh
 git clone https://github.com/Aleph1-9012/Evangelion.git
@@ -60,7 +62,7 @@ Run this from any folder:
 sudo eva
 ```
 
-Choose another theme or resolution. Your selection takes effect on the next boot. For direct selection, use `sudo eva set THEME_ID PROFILE`. Run `eva list` to see the available theme IDs and profiles.
+Choose another theme or resolution. Your selection takes effect on the next boot. For direct selection, use `sudo eva set THEME_ID PROFILE`. Run `eva list` to see the available theme IDs and profiles. `sudo eva refresh` rebuilds the boot menu for your current theme, for example after installing an update with `sudo ./install.sh --no-apply`.
 
 ## Uninstall
 

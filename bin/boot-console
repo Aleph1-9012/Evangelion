@@ -66,17 +66,38 @@ if [[ ${1:-} == uki-info ]]; then
     exit
 fi
 
+if [[ ${1:-} == loader ]]; then
+    (($# == 2)) || die 'Invalid loader arguments.'
+    version='' efi=0 pc=0
+    for command in grub-mkconfig grub2-mkconfig; do
+        if command -v "$command" >/dev/null; then
+            version=$("$command" --version 2>/dev/null || :)
+            break
+        fi
+    done
+    version=${version##*) }
+    version=${version#*:}
+    case $version in
+        2.12|2.12-*|2.12.*) efi=1;;
+        2.14|2.14-*|2.14.*) efi=1; pc=1;;
+    esac
+    printf 'set eva_cards_efi=%s\nset eva_cards_pc=%s\n' "$efi" "$pc"
+    tail -n +3 -- "$2"
+    exit
+fi
+
 (($#>=2)) || die 'Usage: boot-console filter|generate PATH [--root DIRECTORY] [--numbered]'
 action=$1 input=$2;shift 2
-root=/ numbered=${EVANGELION_NUMBERED_MENU:-0}
+root=/ numbered=${EVANGELION_NUMBERED_MENU:-0} bls_snapshot=${EVANGELION_BLS_SNAPSHOT:-}
 while (($#)); do
     case $1 in
         --root) (($#>=2)) || die '--root requires a directory';root=$2;shift 2;;
         --numbered) numbered=1;shift;;
+        --bls-snapshot) (($#>=2)) || die '--bls-snapshot requires a directory'; bls_snapshot=$2;shift 2;;
         *) die "Unknown option: $1";;
     esac
 done
-filter() { awk -f "$HERE/boot-console.awk" -- "$root" "$numbered" "$HERE/boot-console" < "$1"; }
+filter() { awk -f "$HERE/boot-console.awk" -- "$root" "$numbered" "$HERE/boot-console" "$bls_snapshot" < "$1"; }
 case $action in
     filter) filter "$input";;
     generate)

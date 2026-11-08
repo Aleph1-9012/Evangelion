@@ -1,3 +1,18 @@
+# Version 2.2.0
+
+- Fixed GRUB 2.12 submenu rendering without changing the artwork or centered padding.
+- Fixed an awk function-name conflict that prevented installation with mawk.
+- Added checked Fedora BLS entries with native IDs, kernel-update refreshes and a live native-menu fallback.
+- Preserved Fedora's stored kernel options during theme installation when its generator supports `--no-grubenv-update`.
+- Restricted Soryu's card module to the supported GRUB versions and platforms, checked again on each configuration refresh.
+- Added `sudo eva refresh`. After a catalog-only update with `--no-apply`, the next refresh, including the automatic one after a kernel update, applies the updated boot helper and the current theme's updated files.
+- Made `eva refresh` regenerate native GRUB entries even when the theme and settings are unchanged. Identical output keeps the existing configuration backup.
+- Clarified that manually applying updated theme files saves the old version in the rollback slot; `eva refresh` preserves the existing rollback choice.
+
+Soryu's cards are enabled on GRUB 2.12 and 2.14 with x86-64 UEFI, and
+GRUB 2.14 with 32-bit PC BIOS. Other combinations, including GRUB 2.16,
+use the console menu.
+
 # Version 2.1.0
 
 - Reduced countdown redraw work in Ayanami, Pen-Pen and SEELE by cropping timer masks without changing their appearance or timing.
@@ -11,14 +26,13 @@ navigation and full-screen console boot messages. Installation and theme
 switching still use Bash, awk and standard Linux tools. Python, jq and a
 compiler are not required.
 
-Validated all 24 profiles, including QEMU boot and navigation checks, and
-tested packaged installation, switching, rollback and uninstall.
-
 ## Upgrade
 
 From the new download, run `sudo ./install.sh` and select your theme and
 profile. Applying a theme updates the shared boot helper as well as its
-artwork. Existing timeout, default entry and rollback choices are preserved.
+artwork. Existing timeout and default entry are preserved. If the theme's
+runtime files change, the old installed version replaces the saved rollback
+choice.
 A catalog-only update with `--no-apply` leaves the active boot helper in place.
 
 See [installation and compatibility](ADVANCED.md) for graphics modes,

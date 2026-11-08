@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
+# Refresh checked BLS entries after the distribution adds or removes a kernel.
+set -eu
+case ${1:-} in add|remove) ;; *) exit 0;; esac
+[[ -f /var/lib/evangelion-grub/state.json && -x /usr/local/bin/eva ]] || exit 0
+if ! /usr/local/bin/eva refresh; then
+    printf 'eva: BLS refresh failed; GRUB will use the live native menu if the snapshot is stale.\n' >&2
+fi

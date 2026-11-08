@@ -4,7 +4,13 @@ The themes use GRUB 2's graphical theme format. The Linux installer requires Bas
 
 The installer preserves your existing timeout, default boot entry and menu-generation scripts.
 
-There is no distribution-name check. The installation paths and available GRUB tools determine whether the installer can run. Arch Linux with GRUB 2.14 is the hardware-tested environment; the other directory and command layouts are checked in disposable staging roots, not full installations of every distribution.
+GNU awk and mawk are supported. The bundled scripts do not require GNU awk
+extensions. Fedora installations use `--no-grubenv-update` when the installed
+GRUB generator offers it, so a theme change does not rewrite stored BLS
+kernel options. BLS snapshots also use the distribution's `grub-probe` and
+`grub-mkrelpath` commands, or their `grub2-` names.
+
+There is no distribution-name check. The installation paths and available GRUB tools determine whether the installer can run.
 
 If both GRUB directories contain configurations, select the active one explicitly, for example `sudo ./install.sh ramiel 1080p --grub-dir /boot/grub2`. Later operations use the directory recorded in the installed theme's ownership paths. The installer writes the main configuration there, not an EFI forwarding file under `/boot/efi/EFI/`.
 
@@ -49,9 +55,9 @@ sudo eva set wunder 1440p --dry-run
 
 Only profiles listed in `themes/catalog.json` with a matching `runtime-ready.json` record, PNG artwork, `theme.txt` and `fonts/*.pf2` can be installed. The installer checks the recorded canvas dimensions and every asset's SHA256, requires every referenced image and at least one valid slice per styled box, and matches theme font names against the names embedded in the packaged PF2 files. Changed, missing or unrecorded assets require a rebuild.
 
-The installer and chooser use Bash and awk to read the JSON asset and ownership records. The boot helper also uses Bash and awk to process generated entries as data. Existing installation records remain compatible. To refresh only the installed command and theme catalog, run `sudo ./install.sh --no-apply` from the updated folder. This preserves the current choice, rollback snapshot and original GRUB settings.
+The installer and chooser use Bash and awk to read the JSON asset and ownership records. The boot helper also uses Bash and awk to process generated entries as data. Existing installation records remain compatible. To refresh only the installed command and theme catalog, run `sudo ./install.sh --no-apply` from the updated folder. This preserves the current choice, rollback snapshot and original GRUB settings. It does not change `/boot` immediately, but the next `sudo eva refresh` applies the updated boot helper and the current theme's updated files from that catalog. On systems with the kernel-install hook, a kernel addition or removal runs that refresh automatically.
 
-When upgrading from the older Python-based installer, run `sudo ./install.sh` and select your current theme and profile. That also replaces the installed boot helper while retaining the saved rollback choice. A catalog-only update leaves the active boot helper in place until a theme is applied.
+When upgrading from the older Python-based installer, run `sudo ./install.sh` and select your current theme and profile. That also replaces the installed boot helper. If the theme's runtime files change, the previously installed version becomes the single rollback snapshot, replacing the older saved choice. A catalog-only update leaves the active boot helper in place until a theme is applied or `sudo eva refresh` runs, either manually or through the kernel-install hook.
 
 The three design sizes are `720p`, `1080p` and `1440p`. Graphics mode and design size are separate. A larger mode keeps the design at its native dimensions, centered with padding. For example, `1440p --gfxmode 3840x2160` uses the 2560×1440 design on a 3840×2160 framebuffer. There is no separately scaled 4K design. The installer rejects a mode smaller than the selected design.
 
@@ -59,7 +65,7 @@ Changing only the theme while keeping the same profile preserves the previous re
 
 Check the available modes using `videoinfo` in real GRUB before a hardware test. A desktop mode does not establish firmware support. The loader returns to a plain console menu if the selected mode cannot initialize. The existing entries and timeout remain usable there.
 
-GRUB 2.14 appends an `auto` fallback internally even when `gfxmode` names one exact mode. The generated loader appends a deliberately invalid mode token, `evangelion_no_auto_fallback`, so a failed exact mode returns an error before GRUB reaches that hidden fallback. The token is an implementation detail, not a mode to enter in the installer. Supported and unsupported branches were tested in real GRUB. Revalidate this behavior when changing GRUB versions.
+GRUB 2.14 appends an `auto` fallback internally even when `gfxmode` names one exact mode. The generated loader appends a deliberately invalid mode token, `evangelion_no_auto_fallback`, so a failed exact mode returns an error before GRUB reaches that hidden fallback. The token is an implementation detail, not a mode to enter in the installer.
 
 A dry run only previews changes. It does not copy theme files or activate a theme. To install the reviewed selection, rerun without `--dry-run`, then check the configured choice:
 
@@ -89,9 +95,19 @@ Very long titles end with an ellipsis when all available lines are full.
 The AUTO BOOT caption, seconds and unit disappear together when the timeout
 is cancelled. Empty card positions contain no entry number or text.
 
-The installer loads a packaged `evangelion_cards.mod` for x86-64 UEFI or
-32-bit PC BIOS. Soryu has VM coverage on GRUB 2.12 and 2.14 with x86-64
-UEFI, and GRUB 2.14 with PC BIOS. Other GRUB versions have not been validated. No compiler, Python or jq is required. The module uses the
+The installer enables the packaged `evangelion_cards.mod` on GRUB 2.12 and
+2.14 with x86-64 UEFI, and GRUB 2.14 with 32-bit PC BIOS.
+The loader checks the installed GRUB version
+on every configuration refresh and enables the module only for those version
+and platform combinations. Other combinations, including GRUB 2.16, retain the
+console menu. The check reads the version reported by `grub-mkconfig`, not the
+GRUB image the firmware boots. Some distributions, including Arch Linux, do
+not rerun `grub-install` when the GRUB package is upgraded, so the two can
+differ. Follow your distribution's bootloader update instructions for your
+firmware and Secure Boot setup. Fedora UEFI systems update the bootloader
+through the `shim` and GRUB packages; do not run `grub2-install` there. See
+[Fedora's UEFI instructions](https://fedoraproject.org/wiki/GRUB_2#Instructions_for_UEFI-based_systems).
+No compiler, Python or jq is required. The module uses the
 existing GRUB menu model and does not replace the installed GRUB executable.
 Other architectures, including 32-bit UEFI, use the console menu. A missing
 or rejected card module also returns to the console menu with the original
@@ -119,6 +135,7 @@ GRUB_TIMEOUT_STYLE="menu"
 # Process the current GRUB generators on every configuration refresh.
 if [ -n "${grub_mkconfig_dir-}" ]; then
   export EVANGELION_GRUB_SOURCE_DIR="$grub_mkconfig_dir"
+  export EVANGELION_BLS_SNAPSHOT='/boot/grub/themes/evangelion/bls'
   grub_mkconfig_dir='/var/lib/evangelion-grub/boot/grub.d'
 fi
 # END EVANGELION GRUB
@@ -139,11 +156,28 @@ The installer owns these locations:
 | `/var/lib/evangelion-grub/state.json` | Current choice, original relevant setting lines and owned-file hashes |
 | `/var/lib/evangelion-grub/grub.cfg.previous` | Exactly one previous generated configuration, retained for recovery |
 | `/var/lib/evangelion-grub/previous/` | One previous runtime snapshot for theme rollback |
+| `/etc/kernel/install.d/99-zz-evangelion.install` | Owned kernel-update hook when a kernel-install or BLS directory exists |
 | `/usr/local/bin/eva` | Persistent executable command |
 | `/usr/local/share/evangelion/` | Manager, all validated profiles and license files |
 | `/var/lib/evangelion-grub/manager.json` | Ownership hashes for the installed command and catalog |
 
 `grub-mkconfig` writes a temporary candidate beside the existing `/boot/grub/grub.cfg`. The installer runs `grub-script-check`, checks that the exact generated loader is present, and only then replaces the active configuration. File writes use same-directory temporary files and atomic replacement. Generation, syntax-check and ordinary write failures restore the files changed by that operation. Temporary candidate files are removed on success and failure.
+
+The late loader keeps the selected theme and mode even if distribution
+drop-ins, such as Kali's `kali-themes.cfg`, assign different values during
+generation. Those distribution files remain untouched. Validation checks
+the managed loader, including its GRUB-variable paths, rather than requiring
+literal theme or font paths from the distribution header.
+
+`sudo eva refresh` regenerates and validates the boot menu even when the
+theme files and settings are unchanged. It picks up changes from the native
+GRUB generators and updates checked BLS entries while preserving the theme,
+mode and saved rollback choice. If the generated configuration is identical,
+the existing configuration backup is retained. Kernel-install calls refresh
+automatically after kernel additions or removals. Fedora BLS menus retain a
+live native-menu fallback. See [BLS boot behavior](BOOT_CONSOLE.md#fedora-bls-entries)
+for the supported records and fallback conditions. Theme rollback rebuilds
+the BLS snapshot from the current kernels instead of restoring stale entries.
 
 The backup stores one previous generated configuration and rotates only after successful validation. It remains after uninstall. It is an emergency artifact, not the normal uninstall mechanism; blindly copying an old generated file could discard boot-entry changes. Full transaction recovery after power loss or process termination with `SIGKILL` is not implemented. Run installation as a maintenance operation with a recovery path available.
 
@@ -155,6 +189,11 @@ sudo eva rollback
 ```
 
 Rollback restores the previous Evangelion theme, profile and graphics mode from its verified runtime snapshot. It regenerates configuration using the current system, preserving unrelated settings and boot-entry changes. The outgoing choice becomes the single previous snapshot, so another rollback switches back. A failed rollback restores the state from before that operation.
+
+Manually reapplying the same theme after its runtime files change saves the
+old version in that rollback slot. An unchanged selection keeps the slot
+intact. `sudo eva refresh` also keeps the existing slot, even when it applies
+updated files from the catalog.
 
 The first Evangelion selection has no previous Evangelion choice. Use `uninstall` to restore the pre-Evangelion appearance. Runtime snapshots remain bounded to one previous choice and do not depend on the old package still being available.
 
@@ -180,22 +219,14 @@ If only the `GRUB_THEME`, `GRUB_FONT` or `GRUB_GFXMODE` lines have been removed 
 
 Other edits inside the managed defaults block, including changed values, stop the operation before writing anything. Edits to the generated loader also stop the operation. The ownership record contains the original generated block. Reconcile conflicting edits with that record before retrying. Installer switching also refuses to overwrite runtime files you modified. It never deletes another theme directory.
 
-## Hardware observations
-
-EVA-01, Wunder and EVA-02 have booted successfully on an Arch Linux machine. All three themes have also passed checks in disposable UEFI virtual machines at 720p, 1080p, 1440p and larger padded modes. Physical firmware support for every mode and Secure Boot compatibility remain untested.
-
-Ramiel passed the same virtual-machine display modes, including menu navigation, countdown, submenu boot and console fallback. A physical-machine test is still pending.
+## Theme behavior
 
 EVA-02 shows five rows. Its fixed 01–05 labels mark the visible slots while longer menus scroll. Entry titles come from GRUB. Six Caps provides the condensed entry lettering; symbols and languages outside the font's coverage depend on GRUB's fallback fonts. The countdown uses Intel One Mono and a continuous bar. The reference image's small arrow at the fill endpoint is omitted from the live countdown.
 
 Ramiel shows five rows with Inter lettering and an orange selection marker. Its thin countdown bar and numeric caption disappear when a key cancels automatic boot. Longer menus scroll. Long titles are clipped within the menu width, including some common multiword entries; use GRUB's entry editor to inspect the full title.
 
-Ayanami, Pen-Pen and SEELE passed stock GRUB 2.14 tests in disposable UEFI virtual machines at 720p, 1080p and 1440p, plus centered 1440p designs at 2560×1600 and 3840×2160. The checks cover menu navigation, scrolling, countdown expiry and cancellation, submenus, console fallback, direct Linux and UKI boot messages. The owner confirmed all three worked on a physical PC after the fixes for unused row numbers and countdown cancellation.
-
 Ayanami, Pen-Pen and SEELE each show four rows. Ayanami retains the red corner and underline, Pen-Pen uses the orange footprint, and SEELE uses the red eye and underline. Ayanami and SEELE attach number badges to generated entries, restarting at 01 inside each submenu. Numbers move with their entries when the menu scrolls. Unused rows have no number or divider. GRUB supplies the entry titles, and long titles are clipped at the menu edge. The two-digit artwork covers entries 01 to 99; larger menus remain usable, with later entries shown without a number badge.
 
 Their countdown digits show the actual GRUB timeout. Ayanami's crosses and Pen-Pen's footprints start full and disappear as whole cells from right to left. SEELE keeps all eight small bars and moves a single tall marker from 08 to 01. These positions divide the configured timeout into equal stages; the installer preserves the timeout. A key cancels automatic boot and hides the entire countdown: BOOT IN, the remaining seconds, the unit, outlines, timer labels and shapes. SEELE's small bars remain during an active countdown and disappear when it is cancelled.
 
-The empty terminal box was reproduced in stock GRUB 2.14 before any kernel ran, with EVA-01 and all four Marathon themes. The current fix switches to full-screen console output and shows real Linux boot messages. The earlier approach kept the theme frozen while the kernel loaded and has been retired.
-
-The console handoff was confirmed after a physical reboot on the Arch/Omarchy machine using Wunder's 1440p profile at 2560×1600 and its original Linux EFI image. Boot messages appeared as intended. That test used the earlier helper. The Bash/awk replacement has VM and staged installation coverage; a physical reboot with that replacement is still pending. The handoff adds no boot delay, but it does not remove time spent loading the kernel, initramfs or graphics drivers. The menu timeout still applies before an entry is selected.
+The console handoff adds no boot delay, but it does not remove time spent loading the kernel, initramfs or graphics drivers. The menu timeout still applies before an entry is selected.

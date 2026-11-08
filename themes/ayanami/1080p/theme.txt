@@ -2,6 +2,9 @@
 title-text: ""
 desktop-color: "#004CB6"
 
+desktop-image: "desktop.png"
+desktop-image-scale-method: "stretch"
+
 terminal-font: "Evangelion terminal Regular 16"
 terminal-left: "0"
 terminal-top: "0"

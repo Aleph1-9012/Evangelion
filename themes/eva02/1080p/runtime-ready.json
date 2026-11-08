@@ -13,8 +13,9 @@
     "selected": "Evangelion eva02-1080p-selected Regular 46"
   },
   "sha256": {
-    "README.md": "5826f6ceb023e2499a66b17267d12e0dd85035a472c40c03f4869c783e2566b6",
+    "README.md": "da3f7232c443690a94aa701913d8ffb8606a29107fdf65b5ae1fe7cd7a446b4c",
     "background.png": "5e7a714b9bc7e301879adfe88f1bde12cf7eb61cb3317bdca858f9a37fa63e3e",
+    "desktop.png": "8f44269541153f8d2995851c35dd20c3999f0b9c6db0a1919978786deeb1b2e1",
     "fonts/eva02-1080p-menu.pf2": "819a97fd02f41794d63574107e624f6c31f82d1c4e2508d7c6bdb876628d2f41",
     "fonts/eva02-1080p-selected.pf2": "7137fdda4e50c620ae06701e16afd71a5986790396418f2745db6c646606458b",
     "fonts/eva02-1080p-timer.pf2": "1d4bea654112397401843391add33448765bb4428ada32495b49f84619f437b9",
@@ -29,11 +30,11 @@
     "selectors/selected_e.png": "3da4d23b905ea4d81c0ddc846442d30a7338a822c6fc201c3aaf883253251300",
     "selectors/selected_w.png": "f3bbfc5447a2cdb3a7a331c6b3a622330efa9b14aadd7249a76b2380b1dcc992",
     "selectors/thumb_c.png": "9f33c4843bf24f6a377144dbec531874ea57e7ab510d738e88989a24030cbbd5",
-    "theme.txt": "164cfc95b8209bae84ae842f3b898c034614146a9670f7bd63545959dfd5cbf3"
+    "theme.txt": "ab59ec6e3df0a0d475e350641b02e4868902693ec2d5285fcb386d5797d3e447"
   },
   "verification": {
-    "date": "2026-09-19",
-    "environment": "QEMU TCG / OVMF / stock GRUB 2.14; Soryu horizontal navigation also checked with GRUB 2.12 and SeaBIOS",
+    "date": "2026-11-08",
+    "environment": "QEMU/OVMF, stock GRUB 2.14; Debian and Fedora GRUB 2.12 compatibility coverage",
     "scenarios": [
       "auto",
       "manual",
