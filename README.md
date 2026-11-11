@@ -2,37 +2,39 @@
 
 Eight Evangelion themes for your GRUB boot menu. Each includes 720p, 1080p and 1440p profiles and a matching 4K wallpaper.
 
+Click a preview to view it at full 2560×1440 resolution.
+
 ## Ayanami
 
-![Ayanami preview](previews/Ayanami.png)
+[![Ayanami preview](previews/Ayanami.png)](previews/Ayanami.png)
 
 ## Soryu
 
-![Soryu preview](previews/Soryu.png)
+[![Soryu preview](previews/Soryu.png)](previews/Soryu.png)
 
 ## Pen-Pen
 
-![Pen-Pen preview](previews/Pen-Pen.png)
+[![Pen-Pen preview](previews/Pen-Pen.png)](previews/Pen-Pen.png)
 
 ## SEELE
 
-![SEELE preview](previews/SEELE.png)
+[![SEELE preview](previews/SEELE.png)](previews/SEELE.png)
 
 ## EVA-01
 
-![EVA-01 preview](previews/EVA-01.png)
+[![EVA-01 preview](previews/EVA-01.png)](previews/EVA-01.png)
 
 ## Wunder
 
-![Wunder preview](previews/Wunder.png)
+[![Wunder preview](previews/Wunder.png)](previews/Wunder.png)
 
 ## EVA-02
 
-![EVA-02 preview](previews/EVA-02.png)
+[![EVA-02 preview](previews/EVA-02.png)](previews/EVA-02.png)
 
 ## Ramiel
 
-![Ramiel preview](previews/Ramiel.png)
+[![Ramiel preview](previews/Ramiel.png)](previews/Ramiel.png)
 
 ## Install
 

@@ -4,8 +4,8 @@
 set -Eeuo pipefail
 export LC_ALL=C
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-(($# == 3)) || exit 1
-root=$1 grub_dir=$2 output=$3
+(($# == 2)) || exit 1
+root=$1 output=$2
 directory=${root%/}/boot/loader/entries
 fallback() { printf 'eva: BLS snapshot: %s\n' "$*" >&2; exit 2; }
 [[ -d $directory ]] || exit 2

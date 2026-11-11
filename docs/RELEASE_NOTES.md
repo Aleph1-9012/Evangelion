@@ -1,3 +1,15 @@
+# Version 2.2.1
+
+- Fixed Fedora BLS snapshots rejecting TuneD's `$tuned_initrd` suffix. Initrd paths and supported GRUB variables retain their order, including optional overlays.
+- Added a reason to BLS snapshot rejection messages while keeping the live native-menu fallback.
+- Separated the selected theme's files from catalog scans and stopped installation planning when a file inventory fails.
+- Consolidated GRUB command parsing and removed redundant installer work without changing boot actions, theme switching or recovery behavior.
+- Refreshed all eight README previews with native 2560×1440 captures and full-resolution links, preserving the existing theme order.
+
+Installation and theme switching still use Bash, awk and standard Linux tools.
+Python, jq and a compiler are not required. Soryu's supported GRUB versions
+and platforms are unchanged from 2.2.0.
+
 # Version 2.2.0
 
 - Fixed GRUB 2.12 submenu rendering without changing the artwork or centered padding.

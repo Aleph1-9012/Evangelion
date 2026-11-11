@@ -11,11 +11,12 @@ BEGIN {
     delete ARGV[3]
     delete ARGV[4]
     marker = "# Evangelion console handoff v1"
-    split("quiet splash rhgb loglevel systemd.show_status rd.systemd.show_status rd.udev.log_level udev.log_level vt.global_cursor_default plymouth.enable rd.plymouth disablehooks", keys, " ")
+    visible = "loglevel=7 systemd.show_status=1 rd.systemd.show_status=1 rd.udev.log_level=info udev.log_level=info vt.global_cursor_default=1 plymouth.enable=0 rd.plymouth=0"
+    split("quiet splash rhgb disablehooks " visible, keys, " ")
     for (i in keys) {
+        sub(/=.*/, "", keys[i])
         display[keys[i]] = 1
     }
-    visible = "loglevel=7 systemd.show_status=1 rd.systemd.show_status=1 rd.udev.log_level=info udev.log_level=info vt.global_cursor_default=1 plymouth.enable=0 rd.plymouth=0"
     RS = "^$"
     if ((getline source) < 0) {
         fail("Cannot read generated menu.")
@@ -28,28 +29,23 @@ BEGIN {
     exit
 }
 
-function expand_bls(text, i, j, command_start, count, starts, ends, depth, nested, contents, status, replacement, before)
+function expand_bls(text, i, j, count, starts, ends, depth, nested, contents, status, replacement, before)
 {
-    tokenize(text)
+    scan_commands(text)
     nc = 0
-    command_start = 1
     for (i = 1; i <= nt; i++) {
-        if (tk[i] == "{") { depth++; command_start = 1; continue }
-        if (tk[i] == "}") { depth--; command_start = 1; continue }
-        if (tk[i] == "\n" || tk[i] == ";") { command_start = 1; continue }
-        if (command_start && !td[i] && tv[i] ~ /^(if|elif|then|else|do|!)$/) continue
-        if (command_start && !td[i] && tv[i] == "blscfg") {
+        if (tk[i] == "{") { depth++; continue }
+        if (tk[i] == "}") { depth--; continue }
+        if (command_at[i] == "blscfg") {
             before = substr(text, 1, ts[i]-1)
             if (before !~ /# Evangelion native BLS\n[ \t]*$/) {
                 if (bls_snapshot == "") fail("Runtime BLS requires the managed snapshot loader.")
                 starts[++count] = ts[i]
-                j = i+1
-                while (j <= nt && tk[j] == "word") j++
+                j = word_end[i]
                 ends[count] = te[j-1]
                 if (depth || j != i+1) nested = 1
             }
         }
-        command_start = 0
     }
     if (!count) return text
     status = (getline contents < (bls_snapshot "/entries.cfg"))
@@ -123,47 +119,34 @@ function fail(message)
     exit 1
 }
 
-function number_entries(text, i, pending, depth, level, command_start, token, end, j, badge, found)
+function number_entries(text, i, pending, depth, level, token, end, j, badge, found)
 {
-    tokenize(text)
+    scan_commands(text)
     nc = 0
     depth = 0
     level = 1
     counts[level] = 0
     pending = ""
-    command_start = 1
     for (i = 1; i <= nt; i++) {
-        token = td[i] ? "" : tv[i]
+        token = command_at[i]
         if (tk[i] == "{") {
             block[++depth] = pending
             if (pending == "submenu") {
                 counts[++level] = 0
             }
             pending = ""
-            command_start = 1
             continue
         }
         if (tk[i] == "}") {
             if (block[depth--] == "submenu") {
                 level--
             }
-            command_start = 1
             continue
         }
-        if (tk[i] == "\n" || tk[i] == ";") {
-            command_start = 1
-            continue
-        }
-        if (command_start && token ~ /^(if|elif|then|else|do|!)$/) {
-            continue
-        }
-        if (command_start && token ~ /^(menuentry|submenu)$/) {
+        if (token ~ /^(menuentry|submenu)$/) {
             pending = token
             counts[level]++
-            end = i + 1
-            while (end <= nt && tk[end] == "word") {
-                end++
-            }
+            end = word_end[i]
             badge = counts[level] <= 99 ? sprintf("--class evangelion-index-%02d", counts[level]) : ""
             found = 0
             for (j = i + 1; j < end; j++) {
@@ -177,7 +160,6 @@ function number_entries(text, i, pending, depth, level, command_start, token, en
                 change(te[i], te[i], " " badge)
             }
         }
-        command_start = 0
     }
     return apply(text)
 }
@@ -276,16 +258,37 @@ function tokenize(text, i, start, c, value, q, dynamic, end, nextc)
     }
 }
 
-function transform(text, i, pending, depth, command_start, entry_count, token, j, indent, start, rest, handoff, end, first, path_index, path, params, mode, k, in_entry, existing)
+function scan_commands(text, i, command_start, end)
 {
     tokenize(text)
+    command_start = 1
+    for (i = 1; i <= nt; i++) {
+        command_at[i] = ""
+        if (tk[i] != "word") {
+            command_start = 1
+        } else if (command_start && !td[i] && tv[i] ~ /^(if|elif|then|else|do|!)$/) {
+            continue
+        } else {
+            if (command_start && !td[i]) command_at[i] = tv[i]
+            command_start = 0
+        }
+    }
+    end = nt + 1
+    for (i = nt; i >= 1; i--) {
+        if (tk[i] != "word") end = i
+        word_end[i] = end
+    }
+}
+
+function transform(text, i, pending, depth, entry_count, token, indent, start, rest, handoff, end, first, path_index, mode, k, in_entry, existing)
+{
+    scan_commands(text)
     nc = 0
     depth = 0
     pending = ""
-    command_start = 1
     entry_count = 0
     for (i = 1; i <= nt; i++) {
-        token = td[i] ? "" : tv[i]
+        token = command_at[i]
         if (tk[i] == "{") {
             block[++depth] = (pending != "" ? pending : "block")
             if (pending == "menuentry") {
@@ -305,7 +308,6 @@ function transform(text, i, pending, depth, command_start, entry_count, token, j
                 entry_count++
             }
             pending = ""
-            command_start = 1
             continue
         }
         if (tk[i] == "}") {
@@ -313,20 +315,12 @@ function transform(text, i, pending, depth, command_start, entry_count, token, j
                 fail("Unbalanced GRUB block.")
             }
             depth--
-            command_start = 1
             continue
         }
-        if (tk[i] == "\n" || tk[i] == ";") {
-            command_start = 1
-            continue
-        }
-        if (command_start && token ~ /^(if|elif|then|else|do|!)$/) {
-            continue
-        }
-        if (command_start && token ~ /^(menuentry|submenu|function)$/) {
+        if (token ~ /^(menuentry|submenu|function)$/) {
             pending = token
         }
-        if (command_start && token == "blscfg") {
+        if (token == "blscfg") {
             if (bls_snapshot == "") fail("Runtime BLS requires the managed snapshot loader.")
         }
         in_entry = 0
@@ -335,11 +329,8 @@ function transform(text, i, pending, depth, command_start, entry_count, token, j
                 in_entry = 1
             }
         }
-        if (command_start && in_entry && token ~ /^(linux|linuxefi|linux16|chainloader)$/) {
-            end = i + 1
-            while (end <= nt && tk[end] == "word") {
-                end++
-            }
+        if (in_entry && token ~ /^(linux|linuxefi|linux16|chainloader)$/) {
+            end = word_end[i]
             first = i + 1
             if (first == end) {
                 fail(token " has no boot image.")
@@ -363,7 +354,6 @@ function transform(text, i, pending, depth, command_start, entry_count, token, j
                 change(ts[i], te[end - 1], substr(text, ts[i], te[path_index] - ts[i]) " " visible_arguments())
             }
         }
-        command_start = 0
     }
     if (depth || pending != "") {
         fail("Unclosed GRUB block.")

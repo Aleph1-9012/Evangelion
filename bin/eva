@@ -68,11 +68,12 @@ HELP
 
 catalog() {
     local theme profile available
+    local -A resources=()
     CATALOG=()
     for theme in "${THEMES[@]}"; do
         available=
         for profile in "${PROFILES[@]}"; do
-            if (source_files "$theme" "$profile") >/dev/null 2>&1; then available+=" $profile"; fi
+            if (source_files "$theme" "$profile" resources) >/dev/null 2>&1; then available+=" $profile"; fi
         done
         [[ -z $available ]] || CATALOG["$theme"]=${available# }
     done

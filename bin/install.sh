@@ -282,43 +282,70 @@ hash_map() {
     } | record hash-map
 }
 
+read_inventory() {
+    local directory=$1 inventory_file
+    local -n inventory_result=$2
+    shift 2
+    inventory_file=$(mktemp "${WORK:-${TMPDIR:-/tmp}}/inventory-XXXXXXXX") || die 'Cannot create file inventory'
+    if ! find "$directory" -mindepth 1 "$@" -print0 > "$inventory_file"; then
+        rm -f -- "$inventory_file"
+        die "Cannot read complete file inventory: $directory"
+    fi
+    mapfile -d '' -t inventory_result < "$inventory_file"
+    rm -f -- "$inventory_file"
+}
+
 source_files() {
     local theme=$1 profile=$2 base ready native path relative hashes expected
-    local -A assets=()
-    FILES=()
+    local -n runtime_result=$3
+    local -A assets=() profile_runtime=()
+    local -a paths=()
     base=$(safe_path "$SOURCE" "$theme/$profile")
     ready=$(safe_path "$base" runtime-ready.json)
     [[ -f $ready ]] || die "Theme is unavailable: $theme/$profile has no readiness record"
     native=$(profile_mode "$profile")
     expected=$(record readiness "$theme" "$profile" "$native" < "$ready") || die "Invalid readiness record: $theme/$profile"
     while IFS=$'\t' read -r relative _; do safe_path "$base" "$relative" >/dev/null; done < <(record pairs <<< "$expected")
-    while IFS= read -r -d '' path; do
+    read_inventory "$base" paths
+    for path in "${paths[@]}"; do
         relative=${path#"$base/"}
         safe_path "$base" "$relative" >/dev/null
         [[ -f $path || -d $path ]] || die "Source contains a non-regular file: $path"
         [[ -f $path && $relative != runtime-ready.json ]] || continue
-        # hash_map reads this array through a nameref.
         # shellcheck disable=SC2034
         assets["$relative"]=$path
-        case $relative in theme.txt|cards.cfg|*.png|fonts/*.pf2|modules/*/evangelion_cards.mod) FILES["$RUNTIME/$relative"]=$path;; esac
-    done < <(find "$base" -mindepth 1 -print0)
+        case $relative in theme.txt|cards.cfg|*.png|fonts/*.pf2|modules/*/evangelion_cards.mod) profile_runtime["$RUNTIME/$relative"]=$path;; esac
+    done
     hashes=$(hash_map assets) || die 'Cannot hash theme assets'
     [[ $hashes == "$expected" ]] || die "Runtime files differ from the readiness record; rebuild: $theme/$profile"
-    validate_references FILES
+    validate_references profile_runtime
+    runtime_result=()
+    for relative in "${!profile_runtime[@]}"; do runtime_result["$relative"]=${profile_runtime[$relative]}; done
+    if [[ -n ${4:-} ]]; then
+        local -n profile_result=$4
+        profile_result=([runtime-ready.json]="$ready")
+        for relative in "${!assets[@]}"; do profile_result["$relative"]=${assets[$relative]}; done
+    fi
+}
+
+numbered_menu() {
+    local -n menu_resources=$1
+    [[ -v menu_resources[$RUNTIME/icons/evangelion-index-01.png] ]]
 }
 
 prepare_bls() {
     local relative status=0 path
-    # Rollback restores the artwork, then prepares entries for today's kernels.
+    local -a paths=()
     for relative in "${!FILES[@]}"; do
         [[ $relative != "$RUNTIME/bls/"* ]] || unset 'FILES[$relative]'
     done
-    bash "$EVA_REPO/bin/bls-menu" "$ROOT" "$GRUB_DIR" "$WORK/bls" || status=$?
+    bash "$EVA_REPO/bin/bls-menu" "$ROOT" "$WORK/bls" || status=$?
     case $status in
         0)
-            while IFS= read -r -d '' path; do
+            read_inventory "$WORK/bls" paths -type f
+            for path in "${paths[@]}"; do
                 FILES["$RUNTIME/bls/${path#"$WORK/bls/"}"]=$path
-            done < <(find "$WORK/bls" -type f -print0);;
+            done;;
         2)
             if [[ -d $ROOT/boot/loader/entries ]]; then
                 printf 'eva: BLS snapshot unavailable; the live native console menu will remain available.\n' >&2
@@ -373,7 +400,8 @@ owned_changes() {
 
 plan_manager() {
     local removing=${1:-0} relative path theme profile base count=0
-    local -A manager_files=()
+    local -A manager_files=() profile_files=() catalog_runtime=()
+    local -a paths=()
     load_manager
     if ((!removing)); then
         for relative in bin/install.sh bin/eva bin/boot-console bin/boot-console.awk bin/state-data.awk bin/grub-generator bin/bls-menu bin/bls-menu.awk bin/kernel-refresh LICENSE docs/NOTICE.md docs/ADVANCED.md docs/BOOT_CONSOLE.md; do
@@ -381,11 +409,12 @@ plan_manager() {
             [[ -f $path ]] || die "Missing package file: $relative"
             manager_files["$LIBRARY/$relative"]=$path
         done
-        while IFS= read -r -d '' path; do
+        read_inventory "$EVA_REPO/docs/licenses" paths -type f
+        for path in "${paths[@]}"; do
             relative=${path#"$EVA_REPO/"}
             safe_path "$EVA_REPO" "$relative" >/dev/null
             manager_files["$LIBRARY/$relative"]=$path
-        done < <(find "$EVA_REPO/docs/licenses" -type f -print0)
+        done
         manager_files["$COMMAND"]=${manager_files[$LIBRARY/bin/eva]}
         [[ -f $SOURCE/catalog.json ]] || die 'Missing theme catalog'
         manager_files["$LIBRARY/themes/catalog.json"]=$SOURCE/catalog.json
@@ -393,11 +422,10 @@ plan_manager() {
             base=$(safe_path "$SOURCE" "$theme/$profile")
             path=$(safe_path "$base" runtime-ready.json)
             [[ -f $path ]] || continue
-            source_files "$theme" "$profile"
-            while IFS= read -r -d '' path; do
-                relative=${path#"$base/"}
-                manager_files["$LIBRARY/themes/$theme/$profile/$relative"]=$path
-            done < <(find "$base" -type f -print0)
+            source_files "$theme" "$profile" catalog_runtime profile_files
+            for relative in "${!profile_files[@]}"; do
+                manager_files["$LIBRARY/themes/$theme/$profile/$relative"]=${profile_files[$relative]}
+            done
             count=$((count + 1))
         done; done
         ((count)) || die 'No ready theme profiles are available for the manager'
@@ -464,6 +492,7 @@ strip_block() {
 
 make_hook() {
     local mode=$1 path
+    local -n hook_resources=$2
     cat <<HEADER
 #!/bin/sh
 exec bash $(shell_quote "${ROOT%/}/$BOOT_HELPER") loader "\$0"
@@ -483,8 +512,8 @@ HEADER
         # GRUB expands $prefix when the loader runs.
         # shellcheck disable=SC2016
         printf 'loadfont "$prefix/%s"\n' "${path#"$GRUB_DIR/"}"
-    done < <(printf '%s\n' "${!FILES[@]}" | sort)
-    if [[ -v FILES[$RUNTIME/cards.cfg] ]]; then
+    done < <(printf '%s\n' "${!hook_resources[@]}" | sort)
+    if [[ -v hook_resources[$RUNTIME/cards.cfg] ]]; then
         # GRUB's insmod and source can return success after an error. Only the
         # native viewer sets this marker after accepting its configuration.
         cat <<'CARDS'
@@ -583,7 +612,7 @@ plan_changes() {
         [[ $hashes == "$(record get files <<< "$old_previous")" ]] || die 'Previous theme snapshot is missing or modified'
         validate_references FILES
     else
-        source_files "$THEME" "$PROFILE"
+        source_files "$THEME" "$PROFILE" FILES
         mode=$(mode_for "$PROFILE" "$MODE" "$WORK/base-defaults")
     fi
     prepare_bls
@@ -607,7 +636,7 @@ plan_changes() {
         printf '%s\n' "$BEGIN" '# The late loader selects the theme only after the exact mode succeeds.' 'GRUB_THEME=""' 'GRUB_FONT=""' "GRUB_GFXMODE=\"$mode\"" 'GRUB_TIMEOUT_STYLE="menu"'
         printf '%s\n' '# Process the current GRUB generators on every configuration refresh.' 'if [ -n "${grub_mkconfig_dir-}" ]; then' '  export EVANGELION_GRUB_SOURCE_DIR="$grub_mkconfig_dir"'
         printf '  export EVANGELION_BLS_SNAPSHOT=%s\n' "$(shell_quote "${ROOT%/}/$RUNTIME/bls")"
-        if [[ $THEME == ayanami || $THEME == seele ]]; then
+        if numbered_menu FILES; then
             printf '%s\n' '  export EVANGELION_NUMBERED_MENU=1'
         fi
         printf '  grub_mkconfig_dir=%s\n' "$(shell_quote "${ROOT%/}/$BOOT_RUNTIME/grub.d")"
@@ -617,7 +646,7 @@ plan_changes() {
     cat -- "$WORK/base-defaults" > "$WORK/defaults"
     if [[ $newline == true ]]; then printf '\n' >> "$WORK/defaults"; fi
     cat -- "$WORK/block" >> "$WORK/defaults"
-    make_hook "$mode" > "$WORK/hook"
+    make_hook "$mode" FILES > "$WORK/hook"
     printf '%s\n' "$STATE_DATA" > "$WORK/old-state.json"
     printf '%s\n' "$previous" > "$WORK/previous.json"
     printf '%s\n' "$boot_hashes" > "$WORK/boot-files.json"
@@ -625,14 +654,6 @@ plan_changes() {
     plan_add "$DEFAULTS" "$WORK/defaults"; plan_add "$HOOK" "$WORK/hook"; plan_add "$STATE" "$WORK/state.json"
     if ((DEPLOY)); then plan_manager; fi
     printf 'Selected %s %s, exact graphics mode %s.\n' "$THEME" "$PROFILE" "$mode"
-}
-
-prune_plan() {
-    local relative path source
-    for relative in "${!PLAN[@]}"; do
-        path=$(safe_path "$ROOT" "$relative"); source=${PLAN[$relative]}
-        if [[ -z $source && ! -e $path ]] || { [[ -n $source && -f $path ]] && cmp -s -- "$path" "$source"; }; then unset 'PLAN[$relative]'; fi
-    done
 }
 
 needs_generation() {
@@ -715,7 +736,6 @@ cleanup() {
             relative=${SAVED_ORDER[$i]}; old=$WORK/old/$i
             path=$(safe_path "$ROOT" "$relative") || { failed=1; continue; }
             if [[ -f $old ]]; then
-                # Restore content and original mode/ownership with atomic replacement.
                 atomic_write "$relative" "$old" || failed=1
             else rm -f -- "$path" || failed=1; fi
         done
@@ -783,7 +803,7 @@ apply_changes() {
         if [[ $ACTION != uninstall ]]; then
             # Staging generators need the same transformation as the live proxy.
             local -a helper_options=(--bls-snapshot "$ROOT/$RUNTIME/bls")
-            if [[ $THEME == ayanami || $THEME == seele ]]; then helper_options+=(--numbered); fi
+            if numbered_menu FILES; then helper_options+=(--numbered); fi
             bash "$ROOT/$BOOT_HELPER" filter "$CANDIDATE" --root "$ROOT" "${helper_options[@]}" > "$WORK/console-config" || die 'Console handoff generation failed'
             cat -- "$WORK/console-config" > "$CANDIDATE"
         fi
@@ -836,7 +856,6 @@ run_operation() {
         flock -n "$EVA_LOCK" || die 'Another Evangelion operation is running'
     fi
     plan_changes
-    prune_plan
     if ((DRY_RUN || !QUIET)); then display_plan; fi
     if ((DRY_RUN)); then printf 'Dry run only; configuration generation and boot behavior were not tested.\n'; else apply_changes; fi
 }
