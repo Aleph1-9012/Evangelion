@@ -7,45 +7,45 @@ here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 (($# == 3)) || exit 1
 root=$1 grub_dir=$2 output=$3
 directory=${root%/}/boot/loader/entries
-[[ -d $directory && ! -L $directory ]] || exit 2
-[[ $(realpath -e -- "$directory") == "$directory" ]] || exit 2
+fallback() { printf 'eva: BLS snapshot: %s\n' "$*" >&2; exit 2; }
+[[ -d $directory ]] || exit 2
+[[ ! -L $directory && $(realpath -e -- "$directory") == "$directory" ]] || fallback 'entry directory is not a canonical directory'
 command_path() {
     command -v "grub-$1" || command -v "grub2-$1"
 }
-probe=$(command_path probe) || exit 2
-relpath=$(command_path mkrelpath) || exit 2
-uuid=$("$probe" --target=fs_uuid "$directory") || exit 2
-path=$("$relpath" "$directory") || exit 2
-[[ $uuid =~ ^[A-Za-z0-9-]+$ && $path =~ ^/[A-Za-z0-9_./@+-]+$ ]] || exit 2
-[[ /${path#/}/ != */../* ]] || exit 2
+probe=$(command_path probe) || fallback 'grub-probe or grub2-probe is missing'
+relpath=$(command_path mkrelpath) || fallback 'grub-mkrelpath or grub2-mkrelpath is missing'
+uuid=$("$probe" --target=fs_uuid "$directory") || fallback 'cannot identify the boot filesystem'
+path=$("$relpath" "$directory") || fallback 'cannot resolve the GRUB entry path'
+[[ $uuid =~ ^[A-Za-z0-9-]+$ && $path =~ ^/[A-Za-z0-9_./@+-]+$ && /${path#/}/ != */../* ]] || fallback 'unsupported boot filesystem UUID or entry path'
 stamp=$(stat -c %Y -- "$directory")
 # GRUB compares whole-second mtimes. Finish the snapshot in a later second so
 # a subsequent kernel addition cannot share the directory's recorded second.
 if ((stamp >= $(date +%s))); then sleep 1; fi
-((stamp < $(date +%s))) || exit 2
+((stamp < $(date +%s))) || fallback 'entry directory timestamp is in the future'
 shopt -s nullglob
 files=("$directory"/*.conf)
-((${#files[@]} && ${#files[@]} <= 1000)) || exit 2
+((${#files[@]} && ${#files[@]} <= 1000)) || fallback 'expected between 1 and 1000 entry files'
 mkdir -p -- "$output/files"
 inputs=$(mktemp -d "${output%/*}/bls-inputs-XXXXXXXX")
 trap 'rm -rf -- "$inputs"' EXIT
 index=0
 for file in "${files[@]}"; do
     name=${file##*/}
-    [[ -f $file && ! -L $file && $name =~ ^[A-Za-z0-9_+.~:-]+\.conf$ ]] || exit 2
-    (($(stat -c %s -- "$file") <= 1048576)) || exit 2
+    [[ -f $file && ! -L $file && $name =~ ^[A-Za-z0-9_+.~:-]+\.conf$ ]] || fallback "unsupported entry file: $name"
+    (($(stat -c %s -- "$file") <= 1048576)) || fallback "entry exceeds 1 MiB: $name"
     cp -- "$file" "$inputs/$name"
     printf -v number '%04d' "$((++index))"
     cp -- "$inputs/$name" "$output/files/$number.conf"
 done
 awk -f "$here/bls-menu.awk" "$inputs"/*.conf > "$output/entries.cfg" || exit 2
-checker=$(command_path script-check) || exit 2
-"$checker" "$output/entries.cfg" >/dev/null 2>&1 || exit 2
+checker=$(command_path script-check) || fallback 'grub-script-check or grub2-script-check is missing'
+"$checker" "$output/entries.cfg" >/dev/null 2>&1 || fallback 'generated entries failed grub-script-check'
 # Detect writes during the snapshot as well as during boot.
-[[ $(stat -c %Y -- "$directory") == "$stamp" ]] || exit 2
+[[ $(stat -c %Y -- "$directory") == "$stamp" ]] || fallback 'entry directory changed while reading it; retry refresh'
 current=("$directory"/*.conf)
-[[ ${files[*]} == "${current[*]}" ]] || exit 2
-for file in "${files[@]}"; do cmp -s -- "$file" "$inputs/${file##*/}" || exit 2; done
+[[ ${files[*]} == "${current[*]}" ]] || fallback 'entry list changed while reading it; retry refresh'
+for file in "${files[@]}"; do cmp -s -- "$file" "$inputs/${file##*/}" || fallback "entry changed while reading it: ${file##*/}; retry refresh"; done
 printf '%s\n' "$stamp" > "$output/stamp"
 printf '0\n' > "$output/unequal"
 cat > "$output/guard.cfg" <<EOF

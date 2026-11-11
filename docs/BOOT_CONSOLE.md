@@ -49,6 +49,12 @@ IDs, ordering, access settings, kernel paths and initrd order. Boot arguments
 receive the same display changes described above. The original BLS files
 and their saved kernel options are not edited.
 
+Initrd lines may contain multiple paths and GRUB variables such as TuneD's
+`$tuned_initrd`. Their order is preserved, and variables are resolved by GRUB
+when the entry boots. An empty TuneD value adds no image; a populated value
+keeps the configured overlay. Unsupported syntax retains the native menu,
+and the installer reports the entry and field that prevented the snapshot.
+
 Before using those entries, GRUB loads and checks its `cmp` command, compares
 the live files with the copies and checks the entry directory's timestamp.
 If a kernel was added, removed or edited, the original `blscfg` command

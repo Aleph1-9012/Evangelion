@@ -48,16 +48,31 @@ function compare(a,b,    na,nb,va,vb,ra,rb,r) {
     return versioncmp(ra,rb)
 }
 function path(s) {return s ~ /^\/[[:alnum:]_+.\/~:-]+$/ && s !~ /(^|\/)\.\.(\/|$)/}
+function reject(id, message) {
+    print "eva: BLS entry " id ".conf: " message > "/dev/stderr"
+    failed=1
+    exit 2
+}
+function initrd_arguments(id, text,    parts,n,i,result) {
+    sub(/^[[:space:]]+/,"",text); sub(/[[:space:]]+$/,"",text)
+    n=split(text,parts,/[[:space:]]+/)
+    if(!n || text=="") reject(id,"empty initrd field")
+    for(i=1;i<=n;i++) {
+        if(path(parts[i])) result=result " ($root)" parts[i]
+        else if(parts[i] ~ /^\$[[:alpha:]_][[:alnum:]_]*$/) result=result " " parts[i]
+        else reject(id,"unsupported initrd path or variable")
+    }
+    return result
+}
 function emit(id,    title,linux,options,j,header,initrd,value,dt) {
     linux=fields[id,"linux",1]
-    if(linux=="") {failed=1; return}
-    if(!path(linux)) {failed=1; return}
+    if(!path(linux)) reject(id,"missing or unsupported linux path")
     title=fields[id,"title",1]; if(title=="") title=linux
-    if(title ~ /[$\\[:cntrl:]]/) {failed=1;return}
+    if(title ~ /[$\\[:cntrl:]]/) reject(id,"unsupported title")
     header="menuentry " quote(title) " --id=" quote(id)
     for(j=1;j<=counts[id,"grub_arg"];j++) {
         value=fields[id,"grub_arg",j]
-        if(value!="--unrestricted") {failed=1;return}
+        if(value!="--unrestricted") reject(id,"unsupported grub_arg")
     }
     value=fields[id,"grub_users",1]
     if(value=="$grub_users") {
@@ -66,7 +81,7 @@ function emit(id,    title,linux,options,j,header,initrd,value,dt) {
         header=header " \"$eva_bls_access\""
     } else if(value=="") header=header " --unrestricted"
     else if(value ~ /^[[:alnum:]_,.-]+$/) header=header " --users " quote(value)
-    else {failed=1;return}
+    else reject(id,"unsupported grub_users")
     for(j=1;j<=counts[id,"grub_class"];j++) header=header " --class " quote(fields[id,"grub_class",j])
     value=fields[id,"grub_hotkey",1]
     if(value!="") header=header " --hotkey " quote(value)
@@ -76,18 +91,16 @@ function emit(id,    title,linux,options,j,header,initrd,value,dt) {
     print "  load_video\n  set gfxpayload=keep\n  insmod gzio"
     options=fields[id,"options",1]
     if(options=="") options="$default_kernelopts"
-    if(options ~ /[;{}\r\n`]/ || options ~ /\$[0-9@*?#]/) {failed=1;return}
+    if(options ~ /[;{}\r\n`]/ || options ~ /\$[0-9@*?#]/) reject(id,"unsupported options expression")
     print "  linux ($root)" linux " " options
     initrd=""
     for(j=1;j<=counts[id,"initrd"];j++) {
-        value=fields[id,"initrd",j]
-        if(!path(value)) {failed=1;return}
-        initrd=initrd " ($root)" value
+        initrd=initrd initrd_arguments(id,fields[id,"initrd",j])
     }
     if(initrd!="") print "  initrd" initrd
     dt=fields[id,"devicetree",1]
     if(dt!="") {
-        if(!path(dt)) {failed=1;return}
+        if(!path(dt)) reject(id,"unsupported devicetree path")
         print "  devicetree ($root)" dt
     }
     print "}"
@@ -95,15 +108,16 @@ function emit(id,    title,linux,options,j,header,initrd,value,dt) {
 }
 FNR==1 {
     id=FILENAME; sub(/^.*\//,"",id); sub(/\.conf$/,"",id)
-    if(id !~ /^[[:alnum:]_+.~:-]+$/) {failed=1;exit 2}
+    if(id !~ /^[[:alnum:]_+.~:-]+$/) reject(id,"unsupported filename")
     names[++n]=id
 }
 {
     sub(/\r$/,"",$0)
     if($0 ~ /^[[:space:]]*(#|$)/) next
+    sub(/^[[:space:]]+/,"",$0)
     key=$1; value=$0; sub(/^[^[:space:]]+[[:space:]]*/,"",value)
-    if(key !~ /^(title|version|machine-id|linux|initrd|options|grub_users|grub_arg|grub_class|grub_hotkey|devicetree)$/ || value ~ /[\r\n]/) {failed=1;exit 2}
-    if(key !~ /^(initrd|grub_arg|grub_class)$/ && counts[id,key]) {failed=1;exit 2}
+    if(key !~ /^(title|version|machine-id|linux|initrd|options|grub_users|grub_arg|grub_class|grub_hotkey|devicetree)$/ || value ~ /[\r\n]/) reject(id,"unsupported field: " key)
+    if(key !~ /^(initrd|grub_arg|grub_class)$/ && counts[id,key]) reject(id,"duplicate field: " key)
     fields[id,key,++counts[id,key]]=value
 }
 END {
