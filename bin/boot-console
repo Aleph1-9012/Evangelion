@@ -88,16 +88,15 @@ fi
 
 (($#>=2)) || die 'Usage: boot-console filter|generate PATH [--root DIRECTORY] [--numbered]'
 action=$1 input=$2;shift 2
-root=/ numbered=${EVANGELION_NUMBERED_MENU:-0} bls_snapshot=${EVANGELION_BLS_SNAPSHOT:-}
+root=/ numbered=${EVANGELION_NUMBERED_MENU:-0}
 while (($#)); do
     case $1 in
         --root) (($#>=2)) || die '--root requires a directory';root=$2;shift 2;;
         --numbered) numbered=1;shift;;
-        --bls-snapshot) (($#>=2)) || die '--bls-snapshot requires a directory'; bls_snapshot=$2;shift 2;;
         *) die "Unknown option: $1";;
     esac
 done
-filter() { awk -f "$HERE/boot-console.awk" -- "$root" "$numbered" "$HERE/boot-console" "$bls_snapshot" < "$1"; }
+filter() { awk -f "$HERE/boot-console.awk" -- "$root" "$numbered" "$HERE/boot-console" < "$1"; }
 case $action in
     filter) filter "$input";;
     generate)

@@ -333,27 +333,6 @@ numbered_menu() {
     [[ -v menu_resources[$RUNTIME/icons/evangelion-index-01.png] ]]
 }
 
-prepare_bls() {
-    local relative status=0 path
-    local -a paths=()
-    for relative in "${!FILES[@]}"; do
-        [[ $relative != "$RUNTIME/bls/"* ]] || unset 'FILES[$relative]'
-    done
-    bash "$EVA_REPO/bin/bls-menu" "$ROOT" "$WORK/bls" || status=$?
-    case $status in
-        0)
-            read_inventory "$WORK/bls" paths -type f
-            for path in "${paths[@]}"; do
-                FILES["$RUNTIME/bls/${path#"$WORK/bls/"}"]=$path
-            done;;
-        2)
-            if [[ -d $ROOT/boot/loader/entries ]]; then
-                printf 'eva: BLS snapshot unavailable; the live native console menu will remain available.\n' >&2
-            fi;;
-        *) die 'Cannot prepare the BLS snapshot';;
-    esac
-}
-
 plan_add() {
     local relative=$1 source=${2:-} path
     path=$(safe_path "$ROOT" "$relative"); regular_or_absent "$path"
@@ -404,7 +383,7 @@ plan_manager() {
     local -a paths=()
     load_manager
     if ((!removing)); then
-        for relative in bin/install.sh bin/eva bin/boot-console bin/boot-console.awk bin/state-data.awk bin/grub-generator bin/bls-menu bin/bls-menu.awk bin/kernel-refresh LICENSE docs/NOTICE.md docs/ADVANCED.md docs/BOOT_CONSOLE.md; do
+        for relative in bin/install.sh bin/eva bin/boot-console bin/boot-console.awk bin/state-data.awk bin/grub-generator bin/kernel-refresh LICENSE docs/NOTICE.md docs/ADVANCED.md docs/BOOT_CONSOLE.md; do
             path=$(safe_path "$EVA_REPO" "$relative")
             [[ -f $path ]] || die "Missing package file: $relative"
             manager_files["$LIBRARY/$relative"]=$path
@@ -491,8 +470,15 @@ strip_block() {
 }
 
 make_hook() {
-    local mode=$1 path
+    local mode=$1 path embedded_fonts=''
     local -n hook_resources=$2
+    local -a fonts=()
+    if [[ -n ${3:-} && -f $ROOT/etc/fedora-release ]]; then
+        embedded_fonts="(memdisk)/fonts/evangelion/$3"
+    fi
+    while IFS= read -r path; do
+        [[ $path != *.pf2 ]] || fonts+=("${path#"$GRUB_DIR/"}")
+    done < <(printf '%s\n' "${!hook_resources[@]}" | sort)
     cat <<HEADER
 #!/bin/sh
 exec bash $(shell_quote "${ROOT%/}/$BOOT_HELPER") loader "\$0"
@@ -505,14 +491,23 @@ load_video
 insmod gfxterm
 insmod gfxmenu
 insmod png
-loadfont "\$prefix/fonts/unicode.pf2"
 HEADER
-    while IFS= read -r path; do
-        [[ $path == *.pf2 ]] || continue
-        # GRUB expands $prefix when the loader runs.
-        # shellcheck disable=SC2016
-        printf 'loadfont "$prefix/%s"\n' "${path#"$GRUB_DIR/"}"
-    done < <(printf '%s\n' "${!hook_resources[@]}" | sort)
+    if [[ -n $embedded_fonts ]]; then
+        # Fedora accepts fonts from its signed image under shim lockdown.
+        cat <<'LOCKED'
+if [ "$shim_lock" = y -a -f "(memdisk)/fonts/unicode.pf2" ]; then
+  loadfont "(memdisk)/fonts/unicode.pf2"
+LOCKED
+        for path in "${fonts[@]}"; do
+            path="$embedded_fonts/${path##*/}"
+            printf '  if [ -f "%s" ]; then loadfont "%s"; fi\n' "$path" "$path"
+        done
+        printf 'else\n'
+    fi
+    # GRUB expands $prefix when the loader runs.
+    # shellcheck disable=SC2016
+    printf 'loadfont "$prefix/%s"\n' fonts/unicode.pf2 "${fonts[@]}"
+    if [[ -n $embedded_fonts ]]; then printf 'fi\n'; fi
     if [[ -v hook_resources[$RUNTIME/cards.cfg] ]]; then
         # GRUB's insmod and source can return success after an error. Only the
         # native viewer sets this marker after accepting its configuration.
@@ -521,7 +516,7 @@ unset evangelion_cards_ready
 set eva_cards_supported=0
 if [ "$grub_cpu-$grub_platform" = x86_64-efi ]; then set eva_cards_supported=$eva_cards_efi; fi
 if [ "$grub_cpu-$grub_platform" = i386-pc ]; then set eva_cards_supported=$eva_cards_pc; fi
-if [ "$eva_bls_native" != 1 -a "$eva_cards_supported" = 1 -a -f "$prefix/themes/evangelion/modules/$grub_cpu-$grub_platform/evangelion_cards.mod" ]; then
+if [ "$eva_cards_supported" = 1 -a -f "$prefix/themes/evangelion/modules/$grub_cpu-$grub_platform/evangelion_cards.mod" ]; then
   insmod "$prefix/themes/evangelion/modules/$grub_cpu-$grub_platform/evangelion_cards.mod"
   set theme="$prefix/themes/evangelion/theme.txt"
   source "$prefix/themes/evangelion/cards.cfg"
@@ -541,14 +536,12 @@ CARDS
         return
     fi
     cat <<'FOOTER'
-if [ "$eva_bls_native" != 1 ]; then
 if terminal_output gfxterm; then
   set theme="$prefix/themes/evangelion/theme.txt"
   export theme
 else
   unset theme
   terminal_output console
-fi
 fi
 FOOTER
 }
@@ -610,12 +603,15 @@ plan_changes() {
         done < <(record pairs files <<< "$old_previous")
         hashes=$(hash_map FILES) || die 'Cannot hash previous theme snapshot'
         [[ $hashes == "$(record get files <<< "$old_previous")" ]] || die 'Previous theme snapshot is missing or modified'
+        # Verify the whole old rollback record before dropping its obsolete BLS files.
+        for relative in "${!FILES[@]}"; do
+            [[ $relative != "$RUNTIME/bls/"* ]] || unset 'FILES[$relative]'
+        done
         validate_references FILES
     else
         source_files "$THEME" "$PROFILE" FILES
         mode=$(mode_for "$PROFILE" "$MODE" "$WORK/base-defaults")
     fi
-    prepare_bls
     owned_changes "$old_files" FILES 0
     hashes=$(hash_map FILES)
     printf '%s\n' "$hashes" > "$WORK/files.json"
@@ -635,7 +631,6 @@ plan_changes() {
     {
         printf '%s\n' "$BEGIN" '# The late loader selects the theme only after the exact mode succeeds.' 'GRUB_THEME=""' 'GRUB_FONT=""' "GRUB_GFXMODE=\"$mode\"" 'GRUB_TIMEOUT_STYLE="menu"'
         printf '%s\n' '# Process the current GRUB generators on every configuration refresh.' 'if [ -n "${grub_mkconfig_dir-}" ]; then' '  export EVANGELION_GRUB_SOURCE_DIR="$grub_mkconfig_dir"'
-        printf '  export EVANGELION_BLS_SNAPSHOT=%s\n' "$(shell_quote "${ROOT%/}/$RUNTIME/bls")"
         if numbered_menu FILES; then
             printf '%s\n' '  export EVANGELION_NUMBERED_MENU=1'
         fi
@@ -646,7 +641,7 @@ plan_changes() {
     cat -- "$WORK/base-defaults" > "$WORK/defaults"
     if [[ $newline == true ]]; then printf '\n' >> "$WORK/defaults"; fi
     cat -- "$WORK/block" >> "$WORK/defaults"
-    make_hook "$mode" FILES > "$WORK/hook"
+    make_hook "$mode" FILES "$THEME/$PROFILE" > "$WORK/hook"
     printf '%s\n' "$STATE_DATA" > "$WORK/old-state.json"
     printf '%s\n' "$previous" > "$WORK/previous.json"
     printf '%s\n' "$boot_hashes" > "$WORK/boot-files.json"
@@ -802,7 +797,7 @@ apply_changes() {
         "${generator[@]}" "$CANDIDATE" || die "GRUB configuration generation failed"
         if [[ $ACTION != uninstall ]]; then
             # Staging generators need the same transformation as the live proxy.
-            local -a helper_options=(--bls-snapshot "$ROOT/$RUNTIME/bls")
+            local -a helper_options=()
             if numbered_menu FILES; then helper_options+=(--numbered); fi
             bash "$ROOT/$BOOT_HELPER" filter "$CANDIDATE" --root "$ROOT" "${helper_options[@]}" > "$WORK/console-config" || die 'Console handoff generation failed'
             cat -- "$WORK/console-config" > "$CANDIDATE"

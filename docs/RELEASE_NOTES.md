@@ -1,3 +1,10 @@
+# Version 2.2.3
+
+- Fixed the missing `cmp.mod` error on Fedora UEFI. GRUB now reads Fedora's live boot entries directly, including newly installed kernels and TuneD initrd overlays. [Fedora issue #3](https://github.com/Aleph1-9012/Evangelion/issues/3)
+- Selecting a Fedora Linux entry opens the full-screen console. Each entry's existing kernel options control which boot messages appear, including `quiet rhgb`.
+- Fedora's stock Secure Boot loader uses its built-in font. For larger Ramiel labels on a 1080p display, use the 720p profile with full-screen display scaling. [Fedora Secure Boot fonts](ADVANCED.md#fedora-secure-boot-fonts)
+- Shortened EVA-02's 720p countdown unit to `SEC` so the text clears the registration mark with Fedora's font.
+
 # Version 2.2.1
 
 - Fixed Fedora BLS snapshots rejecting TuneD's `$tuned_initrd` suffix. Initrd paths and supported GRUB variables retain their order, including optional overlays.

@@ -30,22 +30,18 @@
     "selectors/selected_e.png": "7489a331e21d973d9157a0cc2f4fba04e5f4853ef8aee5f01010144811fc5732",
     "selectors/selected_w.png": "209649274a31d2b2dd10f5099f997c8779dca2448db639c23164c0c3cf1ea79a",
     "selectors/thumb_c.png": "9f33c4843bf24f6a377144dbec531874ea57e7ab510d738e88989a24030cbbd5",
-    "theme.txt": "a4a420259c20270e4fc45ec87acf44a167dbf420cfe73c13fd0f9c570c021714"
+    "theme.txt": "dba5f01bc15da585774be05cff3c32792ce1f1e1a82ab624870aeb8000a14e4a"
   },
   "verification": {
-    "date": "2026-11-08",
-    "environment": "QEMU/OVMF, stock GRUB 2.14; Debian and Fedora GRUB 2.12 compatibility coverage",
+    "date": "2026-11-15",
+    "environment": "QEMU/OVMF, stock GRUB 2.14 x86_64-efi",
     "scenarios": [
       "auto",
-      "fallback",
       "manual",
-      "navigate",
-      "three",
-      "zero"
+      "navigate"
     ],
     "graphics_modes": [
-      "1280x720",
-      "9999x9999"
+      "1280x720"
     ],
     "boot_handoff": "Shared installer and console helper; visible Linux boot messages; no added delay."
   }

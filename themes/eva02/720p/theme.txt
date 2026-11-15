@@ -47,8 +47,8 @@ terminal-border: "0"
   left = 50%+449
   top = 50%+311
   width = 162
-  height = 14
-  text = "AUTO-BOOT IN %02d SECONDS"
+  height = 16
+  text = "AUTO-BOOT IN %02d SEC"
   font = "Evangelion eva02-720p-timer Regular 9"
   color = "#26262A"
   align = "left"

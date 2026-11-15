@@ -42,7 +42,9 @@ Requires **Linux** with **GRUB 2**, **Bash**, **awk** and standard Linux command
 
 The installer detects `/boot/grub` or `/boot/grub2` and the available GRUB tools. Soryu uses the console menu instead of its cards on GRUB 2.16. See the [compatibility details](docs/ADVANCED.md) for supported versions and platforms.
 
-Fedora's BLS boot menus are supported. After a kernel update, the theme refreshes its copy of the boot entries automatically. If you edit the entries yourself, run `sudo eva refresh`. See [Fedora BLS entries](docs/BOOT_CONSOLE.md#fedora-bls-entries).
+On Fedora, GRUB reads the live BLS entries at boot, including newly installed kernels. Selecting a Fedora Linux entry opens the full-screen console. The entry’s kernel arguments control which messages appear. See [Fedora BLS entries](docs/BOOT_CONSOLE.md#fedora-bls-entries).
+
+On a 1080p display, Fedora 45 users who want larger Ramiel labels with Secure Boot can choose the 720p profile. A display that scales the menu to fill the screen brings the labels close to their original size. See [Fedora Secure Boot fonts](docs/ADVANCED.md#fedora-secure-boot-fonts).
 
 ```sh
 git clone https://github.com/Aleph1-9012/Evangelion.git

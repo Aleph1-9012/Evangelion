@@ -1,6 +1,6 @@
 # Console boot messages
 
-Every installation uses a graphical theme for choosing an OS, then switches to a full-screen console when an entry starts. GRUB displays the selected entry name. Linux entries show kernel, initramfs and system startup messages as the OS produces them. There is no added sleep, animation or progress simulation.
+Every installation uses a graphical theme for choosing an OS, then switches to a full-screen console when an entry starts. GRUB displays the selected entry name or, for native Fedora Linux entries, its boot ID. Linux entries show kernel, initramfs and system startup messages as the OS produces them. There is no added sleep, animation or progress simulation.
 
 All eight themes use the same installer and boot helper. New themes listed in `themes/catalog.json` inherit the handoff. The theme files give GRUB's terminal the full screen, which also prevents the small empty rectangle during stock GRUB's initial clear.
 
@@ -43,38 +43,23 @@ The helper processes explicit entries emitted during menu generation. Entries lo
 
 ## Fedora BLS entries
 
-For a standard Fedora type-1 BLS menu, the installer prepares a checked copy
-of `/boot/loader/entries/*.conf`. The generated entries retain their native
-IDs, ordering, access settings, kernel paths and initrd order. Boot arguments
-receive the same display changes described above. The original BLS files
-and their saved kernel options are not edited.
+Fedora's `blscfg` reads the current boot entries when GRUB builds its menu.
+A kernel addition, removal or edit is visible at the next boot. Fedora handles
+entry order, saved IDs, access rules, initrds and TuneD overlays. The menu
+uses the selected theme. Native BLS entries supply their own classes, so the
+number badges in Ayanami and SEELE are available only for explicit entries
+whose row number is known.
 
-Initrd lines may contain multiple paths and GRUB variables such as TuneD's
-`$tuned_initrd`. Their order is preserved, and variables are resolved by GRUB
-when the entry boots. An empty TuneD value adds no image; a populated value
-keeps the configured overlay. Unsupported syntax retains the native menu,
-and the installer reports the entry and field that prevented the snapshot.
+When a Fedora type-1 Linux entry calls `load_video`, the boot helper
+switches GRUB to the full-screen firmware console and prints the selected
+boot ID. Fedora then loads the kernel and initrd. Fedora's existing command
+line controls verbosity, Plymouth and console routing. An entry with
+`quiet rhgb` can show fewer messages or a splash after Linux takes over.
+A serial-only kernel console sends Linux messages to that serial port.
 
-Before using those entries, GRUB loads and checks its `cmp` command, compares
-the live files with the copies and checks the entry directory's timestamp.
-If a kernel was added, removed or edited, the original `blscfg` command
-supplies the live menu in a full-screen console. Unsupported records, BLS
-command arguments, authentication settings or an unavailable comparison
-module also use that native menu. Boot messages in this fallback follow the
-original kernel options, including any quiet or splash settings.
-
-The owned `/etc/kernel/install.d/99-zz-evangelion.install` hook runs after
-kernel additions and removals. It refreshes the checked entries without
-changing the selected theme or the saved rollback choice. If a refresh
-fails, the old checked files remain and GRUB can use the native fallback.
-After manually editing BLS records, run `sudo eva refresh` to update the
-themed menu. Ordinary `grub-mkconfig` runs retain the boot-time checks.
-
-This path supports a single ordinary `blscfg` invocation and Linux type-1
-records in `/boot/loader/entries`. Other BLS layouts retain their native
-menu. It does not disable BLS, rebuild EFI images or change Secure Boot.
-
-This fixes the empty box and frozen-theme wait by showing the boot process. Hardware initialization still takes time. Boot messages and their language depend on the OS; non-Linux systems control their own boot display.
+The installer leaves the native BLS files and saved kernel options intact.
+Kernel-install can still refresh the managed theme and GRUB configuration.
+Booting uses Fedora's installed EFI loader and its built-in commands.
 
 ## Upgrade and removal
 

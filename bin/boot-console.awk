@@ -5,11 +5,9 @@ BEGIN {
     root = ARGV[1]
     numbered = ARGV[2]
     helper = ARGV[3]
-    bls_snapshot = ARGV[4]
     delete ARGV[1]
     delete ARGV[2]
     delete ARGV[3]
-    delete ARGV[4]
     marker = "# Evangelion console handoff v1"
     visible = "loglevel=7 systemd.show_status=1 rd.systemd.show_status=1 rd.udev.log_level=info udev.log_level=info vt.global_cursor_default=1 plymouth.enable=0 rd.plymouth=0"
     split("quiet splash rhgb disablehooks " visible, keys, " ")
@@ -21,45 +19,14 @@ BEGIN {
     if ((getline source) < 0) {
         fail("Cannot read generated menu.")
     }
-    result = transform(expand_bls(source))
+    # Fedora calls load_video both during menu setup and from each native Linux entry.
+    bls_handoff = "\n  # Evangelion live BLS console handoff\n  if [ -n \"$chosen\" ]; then\n    terminal_output console\n    echo \"Starting $chosen...\"\n  fi\n"
+    result = transform(source)
     if (numbered == 1) {
         result = number_entries(result)
     }
     printf "%s", result
     exit
-}
-
-function expand_bls(text, i, j, count, starts, ends, depth, nested, contents, status, replacement, before)
-{
-    scan_commands(text)
-    nc = 0
-    for (i = 1; i <= nt; i++) {
-        if (tk[i] == "{") { depth++; continue }
-        if (tk[i] == "}") { depth--; continue }
-        if (command_at[i] == "blscfg") {
-            before = substr(text, 1, ts[i]-1)
-            if (before !~ /# Evangelion native BLS\n[ \t]*$/) {
-                if (bls_snapshot == "") fail("Runtime BLS requires the managed snapshot loader.")
-                starts[++count] = ts[i]
-                j = word_end[i]
-                ends[count] = te[j-1]
-                if (depth || j != i+1) nested = 1
-            }
-        }
-    }
-    if (!count) return text
-    status = (getline contents < (bls_snapshot "/entries.cfg"))
-    close(bls_snapshot "/entries.cfg")
-    if (count == 1 && !nested && status > 0) {
-        replacement = "# Evangelion checked BLS v1\nset eva_bls_valid=0\nsource \"$prefix/themes/evangelion/bls/guard.cfg\"\nif [ \"$eva_bls_valid\" = 1 ]; then\n" contents "\nelse\n  set eva_bls_native=1\n  # Evangelion native BLS\n  blscfg\nfi"
-        change(starts[1], ends[1], replacement)
-        return "set eva_bls_native=0\n" apply(text)
-    }
-    # Keep every original BLS command when its arguments or records are not
-    # representable. The managed late loader selects the native console menu.
-    for (i = 1; i <= count; i++)
-        change(starts[i], starts[i], "# Evangelion native BLS\n")
-    return "set eva_bls_native=1\n" apply(text)
 }
 
 function add_token(start, end, raw, val, kind, dynamic)
@@ -119,7 +86,7 @@ function fail(message)
     exit 1
 }
 
-function number_entries(text, i, pending, depth, level, token, end, j, badge, found)
+function number_entries(text, i, pending, depth, level, token, end, j, badge, found, unknown)
 {
     scan_commands(text)
     nc = 0
@@ -133,6 +100,7 @@ function number_entries(text, i, pending, depth, level, token, end, j, badge, fo
             block[++depth] = pending
             if (pending == "submenu") {
                 counts[++level] = 0
+                unknown[level] = 0
             }
             pending = ""
             continue
@@ -143,11 +111,12 @@ function number_entries(text, i, pending, depth, level, token, end, j, badge, fo
             }
             continue
         }
+        if (token == "blscfg" || token == "bls_import") unknown[level] = 1
         if (token ~ /^(menuentry|submenu)$/) {
             pending = token
             counts[level]++
             end = word_end[i]
-            badge = counts[level] <= 99 ? sprintf("--class evangelion-index-%02d", counts[level]) : ""
+            badge = !unknown[level] && counts[level] <= 99 ? sprintf("--class evangelion-index-%02d", counts[level]) : ""
             found = 0
             for (j = i + 1; j < end; j++) {
                 if (! td[j] && tv[j] == "--class" && j + 1 < end && ! td[j + 1] && tv[j + 1] ~ /^evangelion-index-[0-9][0-9]$/) {
@@ -280,17 +249,23 @@ function scan_commands(text, i, command_start, end)
     }
 }
 
-function transform(text, i, pending, depth, entry_count, token, indent, start, rest, handoff, end, first, path_index, mode, k, in_entry, existing)
+function transform(text, i, pending, depth, token, indent, start, rest, handoff, end, first, path_index, mode, k, in_entry, existing)
 {
     scan_commands(text)
+    for (i = 1; i <= nt; i++)
+        if (command_at[i] == "blscfg" || command_at[i] == "bls_import") live_bls = 1
     nc = 0
     depth = 0
     pending = ""
-    entry_count = 0
     for (i = 1; i <= nt; i++) {
         token = command_at[i]
         if (tk[i] == "{") {
             block[++depth] = (pending != "" ? pending : "block")
+            if (pending == "load_video" && live_bls) {
+                video_defined = 1
+                if (index(substr(text, te[i]), bls_handoff) != 1)
+                    change(te[i], te[i], bls_handoff)
+            }
             if (pending == "menuentry") {
                 start = ts[i]
                 while (start > 1 && substr(text, start - 1, 1) != "\n") {
@@ -305,7 +280,6 @@ function transform(text, i, pending, depth, entry_count, token, indent, start, r
                 if (rest !~ existing) {
                     change(te[i], te[i], handoff)
                 }
-                entry_count++
             }
             pending = ""
             continue
@@ -319,9 +293,7 @@ function transform(text, i, pending, depth, entry_count, token, indent, start, r
         }
         if (token ~ /^(menuentry|submenu|function)$/) {
             pending = token
-        }
-        if (token == "blscfg") {
-            if (bls_snapshot == "") fail("Runtime BLS requires the managed snapshot loader.")
+            if (token == "function" && !td[i+1] && tv[i+1] == "load_video") pending = "load_video"
         }
         in_entry = 0
         for (k = 1; k <= depth; k++) {
@@ -358,7 +330,10 @@ function transform(text, i, pending, depth, entry_count, token, indent, start, r
     if (depth || pending != "") {
         fail("Unclosed GRUB block.")
     }
-    return (entry_count ? apply(text) : text)
+    text = apply(text)
+    if (live_bls && !video_defined)
+        text = "function load_video {" bls_handoff "}\n" text
+    return text
 }
 
 function uki(path, cmd, line, status, mode, text, first, previous_rs)

@@ -7,10 +7,9 @@ The installer preserves your existing timeout, default boot entry and menu-gener
 GNU awk and mawk are supported. The bundled scripts do not require GNU awk
 extensions. Fedora installations use `--no-grubenv-update` when the installed
 GRUB generator offers it, so a theme change does not rewrite stored BLS
-kernel options. BLS snapshots also use the distribution's `grub-probe` and
-`grub-mkrelpath` commands, or their `grub2-` names.
+kernel options. Fedora reads its live BLS records at boot.
 
-There is no distribution-name check. The installation paths and available GRUB tools determine whether the installer can run.
+The installation paths and available GRUB tools determine whether the installer can run.
 
 If both GRUB directories contain configurations, select the active one explicitly, for example `sudo ./install.sh ramiel 1080p --grub-dir /boot/grub2`. Later operations use the directory recorded in the installed theme's ownership paths. The installer writes the main configuration there, not an EFI forwarding file under `/boot/efi/EFI/`.
 
@@ -84,6 +83,55 @@ sudo eva set wunder 1440p
 
 Selecting the same theme, profile and mode again makes no changes when the owned files and state already match. It also preserves the previous choice for rollback. No duplicate settings or extra backup generations accumulate.
 
+## Fedora Secure Boot fonts
+
+Fedora 45's signed GRUB includes a 16 px Unifont. With Secure Boot on,
+GRUB accepts fonts bundled inside its signed EFI image. The default
+Fedora installation therefore shows smaller menu labels. Ramiel at 1080p
+uses a 25 px font for ordinary entries and a 24 px font for the selection.
+[Fedora maintainer's explanation](https://bugzilla.redhat.com/show_bug.cgi?id=2144113#c10)
+
+For larger Ramiel labels on a 1080p display, choose the 720p profile.
+
+```sh
+sudo ./install.sh ramiel 720p
+```
+
+This selects a 1280×720 boot menu. If the firmware offers that mode and
+the display scales it to fill the panel, a 16 px font appears about 24 px
+tall. The letter shapes still come from Unifont. Scaling also softens the
+artwork. With centered 1:1 display scaling, the labels stay small. Return
+to the native 1080p profile with `sudo eva set ramiel 1080p`.
+
+### For owners of custom GRUB images
+
+If you already maintain an owner-signed GRUB image, you can include the exact
+fonts. In the `efi_mkimage` step of your matching Fedora GRUB source
+package, add the profile's files after Fedora copies `unicode.pf2` and
+before it runs `mksquashfs`. With `EVA_SOURCE` set to the absolute path
+of your extracted Evangelion package, run these commands in that build
+directory.
+
+```sh
+profile=ramiel/1080p
+mkdir -p "memdisk/fonts/evangelion/$profile"
+cp "$EVA_SOURCE/themes/$profile/fonts/"*.pf2 "memdisk/fonts/evangelion/$profile/"
+```
+
+Use the module list, EFI prefix and SBAT revocation metadata from the same
+Fedora build. Sign the resulting EFI image with your own Secure Boot
+signing key. Boot it through Fedora's shim with the signing certificate
+enrolled as a Machine Owner Key. Keep the alternate shim and GRUB under a
+separate boot entry so the firmware menu can still start the stock Fedora
+loader. Rebuild and sign the alternate image after GRUB security updates,
+and refresh its shim copy when Fedora updates shim.
+
+Reapply the theme with `sudo ./install.sh ramiel 1080p` from the updated
+package. The loader looks up the active profile's embedded fonts when
+Fedora's shim enforces Secure Boot. You can repeat the copy step for each
+profile you want to include. Normal theme installation requires no signing
+tools or key enrollment.
+
 ## Horizontal card compatibility
 
 Soryu uses four horizontal cards with wrapped titles and live entry numbers.
@@ -135,13 +183,12 @@ GRUB_TIMEOUT_STYLE="menu"
 # Process the current GRUB generators on every configuration refresh.
 if [ -n "${grub_mkconfig_dir-}" ]; then
   export EVANGELION_GRUB_SOURCE_DIR="$grub_mkconfig_dir"
-  export EVANGELION_BLS_SNAPSHOT='/boot/grub/themes/evangelion/bls'
   grub_mkconfig_dir='/var/lib/evangelion-grub/boot/grub.d'
 fi
 # END EVANGELION GRUB
 ```
 
-Prior assignments remain in place. The last managed assignments suppress early theme loading and request the visible menu; `/etc/grub.d/99_evangelion` then selects the theme after the exact mode initializes. The hook loads the existing `$prefix/fonts/unicode.pf2` terminal font and all packaged PF2 fonts. Keep the distro's Unicode font installed for console and editor readability.
+Prior assignments remain in place. The last managed assignments suppress early theme loading and request the visible menu; `/etc/grub.d/99_evangelion` then selects the theme after the exact mode initializes. The hook normally loads the distro's Unicode font and the profile's PF2 fonts from disk. Keep the distro's Unicode font installed for the console and editor. Fedora with Secure Boot uses fonts embedded in the EFI image. [Fedora Secure Boot fonts](#fedora-secure-boot-fonts)
 
 The shared console generator adds the handoff to generated boot entries during installation and later `grub-mkconfig` runs. It calls the original scripts in order and preserves their files. All themes inherit this behaviour through the installer. The console handoff does not require patched GRUB binaries or modules. Soryu separately includes a native module for its horizontal card menu.
 
@@ -171,13 +218,11 @@ literal theme or font paths from the distribution header.
 
 `sudo eva refresh` regenerates and validates the boot menu even when the
 theme files and settings are unchanged. It picks up changes from the native
-GRUB generators and updates checked BLS entries while preserving the theme,
-mode and saved rollback choice. If the generated configuration is identical,
-the existing configuration backup is retained. Kernel-install calls refresh
-automatically after kernel additions or removals. Fedora BLS menus retain a
-live native-menu fallback. See [BLS boot behavior](BOOT_CONSOLE.md#fedora-bls-entries)
-for the supported records and fallback conditions. Theme rollback rebuilds
-the BLS snapshot from the current kernels instead of restoring stale entries.
+GRUB generators while preserving the theme, mode and saved rollback choice.
+If the generated configuration is identical, the existing configuration
+backup is retained. Kernel-install calls refresh automatically after kernel
+additions or removals. On Fedora, GRUB reads the current BLS records for
+the active theme and after rollback. See [Fedora BLS entries](BOOT_CONSOLE.md#fedora-bls-entries).
 
 The backup stores one previous generated configuration and rotates only after successful validation. It remains after uninstall. It is an emergency artifact, not the normal uninstall mechanism; blindly copying an old generated file could discard boot-entry changes. Full transaction recovery after power loss or process termination with `SIGKILL` is not implemented. Run installation as a maintenance operation with a recovery path available.
 
